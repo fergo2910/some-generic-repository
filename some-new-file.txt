@@ -3,3 +3,4 @@ generate new deployment
 branch develop
 new feature and work
 add from python code
+test from container
