@@ -1,0 +1,43 @@
+name: release-branch-creation
+
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       logLevel:
+#         description: 'Log level'
+#         required: true
+#         default: 'warning' 
+#         type: choice
+#         options:
+#         - info
+#         - warning
+#         - debug 
+#       print_tags:
+#         description: 'True to print to STDOUT'
+#         required: true 
+#         type: boolean 
+#       tags:
+#         description: 'Test scenario tags'
+#         required: true 
+#         type: string
+#       environment:
+#         description: 'Environment to run tests against'
+#         type: environment
+#         required: true 
+
+jobs:
+  create-new-release-branch:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    steps:
+      - id: checkout-develop
+        uses: actions/checkout@v2
+        with:
+          ref: develop
+      - id: create-release-branch
+        name: Create a release branch
+        run: |
+          release_branch_name="release/"$(date -d "-7 hours" +"%Y-%m-%d/%H-%M-%S")
+          git checkout -b $release_branch_name
+          git push origin $release_branch_name
