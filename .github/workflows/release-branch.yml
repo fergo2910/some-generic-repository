@@ -1,35 +1,14 @@
-name: release-branch-creation
+name: release-branch-deployment
 
 on:
   workflow_dispatch
-#     inputs:
-#       logLevel:
-#         description: 'Log level'
-#         required: true
-#         default: 'warning' 
-#         type: choice
-#         options:
-#         - info
-#         - warning
-#         - debug 
-#       print_tags:
-#         description: 'True to print to STDOUT'
-#         required: true 
-#         type: boolean 
-#       tags:
-#         description: 'Test scenario tags'
-#         required: true 
-#         type: string
-#       environment:
-#         description: 'Environment to run tests against'
-#         type: environment
-#         required: true 
 
 jobs:
-  create-new-release-branch:
+  release-deployment-staging:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: true
+    env:
+      dashboard_stg_app: staging-tmp
+      pay_stg_app: staging-temp
     steps:
       - id: checkout-develop
         uses: actions/checkout@v2
@@ -41,3 +20,43 @@ jobs:
           release_branch_name="release/"$(date -d "-7 hours" +"%Y-%m-%d/%H-%M-%S")
           git checkout -b $release_branch_name
           git push origin $release_branch_name
+          echo ::set-output name=release_branch_name::$release_branch_name
+      ##############################################################################################
+      # Staging
+      ##############################################################################################
+      - id: source_blob_for_dashboard
+        name: Get link to source blob
+        run: |
+          link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ steps.create-release-branch.outputs.release_branch_name }})
+            echo "::add-mask::$link"
+            echo ::set-output name=blob_link::$link
+      - id: build_dashboard_staging
+        name: Heroku build Dashboard
+        run: |
+          heroku_build=$("$./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $dashboard_stg_app ${{ steps.source_blob_for_dashboard.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
+          echo ::set-output name=build::$heroku_build
+          build_id=$(echo $heroku_build | jq -r .id)
+          echo ::set-output name=id::$(echo $dashboard_build_id)
+      - id: wait_for_build_dashboard
+        name: Wait for builds
+        run: |
+          # Wait till the dashboard build finishes
+          curl -fsSN $(echo '${{ steps.build_dashboard_staging.outputs.build }}' | jq -r .output_stream_url)
+      - id: source_blob_for_pay
+        name: Get link to source blob
+        run: |
+          link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ steps.create-release-branch.outputs.release_branch_name }})
+            echo "::add-mask::$link"
+            echo ::set-output name=blob_link::$link
+      - id: build_pay_staging
+        name: Heroku build Pay
+        run: |
+          heroku_build=$("$./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $pay_stg_app ${{ steps.source_blob_for_pay.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
+          echo ::set-output name=build::$heroku_build
+          build_id=$(echo $heroku_build | jq -r .id)
+          echo ::set-output name=id::$(echo $pay_build_id)
+      - id: wait_for_build_pay
+        name: Wait for builds
+        run: |
+          # Wait till the pay build finishes
+          curl -fsSN $(echo '${{ steps.build_pay_staging.outputs.build }}' | jq -r .output_stream_url)
