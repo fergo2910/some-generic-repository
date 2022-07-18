@@ -33,7 +33,7 @@ jobs:
       - id: build_dashboard_staging
         name: Heroku build Dashboard
         run: |
-          heroku_build=$("$./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $dashboard_stg_app ${{ steps.source_blob_for_dashboard.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
+          heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $dashboard_stg_app ${{ steps.source_blob_for_dashboard.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
           echo ::set-output name=build::$heroku_build
           build_id=$(echo $heroku_build | jq -r .id)
           echo ::set-output name=id::$(echo $dashboard_build_id)
@@ -51,7 +51,7 @@ jobs:
       - id: build_pay_staging
         name: Heroku build Pay
         run: |
-          heroku_build=$("$./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $pay_stg_app ${{ steps.source_blob_for_pay.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
+          heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $pay_stg_app ${{ steps.source_blob_for_pay.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
           echo ::set-output name=build::$heroku_build
           build_id=$(echo $heroku_build | jq -r .id)
           echo ::set-output name=id::$(echo $pay_build_id)
