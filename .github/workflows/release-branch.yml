@@ -1,7 +1,7 @@
 name: release-branch-creation
 
-# on:
-#   workflow_dispatch:
+on:
+  workflow_dispatch
 #     inputs:
 #       logLevel:
 #         description: 'Log level'
