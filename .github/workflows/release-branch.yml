@@ -29,4 +29,4 @@ jobs:
         uses: ./.github/workflows/deploy-heroku.yml
         with:
           herokuApplication: ${{ matrix.heroku_app }}
-          checkoutBranch: develop
+          checkoutBranch: ${{ steps.create-release-branch.outputs.release_branch_name }}
