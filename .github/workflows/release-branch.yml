@@ -6,9 +6,10 @@ on:
 jobs:
   release-deployment-staging:
     runs-on: ubuntu-latest
-    env:
-      dashboard_stg_app: staging-tmp
-      pay_stg_app: staging-temp
+    strategy:
+      fail-fast: true
+      matrix: 
+        heroku_app: [staging-tmp, staging-temp]
     steps:
       - id: checkout-develop
         uses: actions/checkout@v2
@@ -24,50 +25,8 @@ jobs:
       ##############################################################################################
       # Staging
       ##############################################################################################
-      - id: source_blob_for_dashboard
-        name: Get link to source blob
-        run: |
-          link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ steps.create-release-branch.outputs.release_branch_name }})
-            echo "::add-mask::$link"
-            echo ::set-output name=blob_link::$link
-      - id: build_dashboard_staging
-        name: Heroku build Dashboard
-        run: |
-          heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $dashboard_stg_app ${{ steps.source_blob_for_dashboard.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
-          stream_url=$(echo $heroku_build | jq -r .output_stream_url)
-          echo ::set-output name=stream_url::$(echo $stream_url)
-          build_id=$(echo $heroku_build | jq -r .id)
-          echo ::set-output name=build_id::$(echo $build_id)
-          release_id=$(echo $heroku_build | jq -r .release.id)
-          echo ::set-output name=release_id::$(echo $release_id)
-      - id: wait_for_build_dashboard
-        name: Wait for builds
-        run: |
-          # Wait till the dashboard build finishes
-          curl -fsSN $(echo '${{ steps.build_dashboard_staging.outputs.stream_url }}') 
-      - id: wait_for_release_dashboard
-        name: Wait for release
-        run: |
-          # Wait for release
-          heroku_release=$(curl -n https://api.heroku.com/apps/$dashboard_stg_app/releases/${{ steps.build_dashboard_staging.outputs.release_id }} -H "Accept: application/vnd.heroku+json; version=3")
-          stream_url=$(echo $heroku_release | jq -r .output_stream_url)
-          curl -fsSN $(echo '$stream_url')
-
-      # - id: source_blob_for_pay
-      #   name: Get link to source blob
-      #   run: |
-      #     link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ steps.create-release-branch.outputs.release_branch_name }})
-      #       echo "::add-mask::$link"
-      #       echo ::set-output name=blob_link::$link
-      # - id: build_pay_staging
-      #   name: Heroku build Pay
-      #   run: |
-      #     heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} $pay_stg_app ${{ steps.source_blob_for_pay.outputs.blob_link }} ${{ steps.create-release-branch.outputs.release_branch_name }})
-      #     echo ::set-output name=build::$heroku_build
-      #     build_id=$(echo $heroku_build | jq -r .id)
-      #     echo ::set-output name=id::$(echo $pay_build_id)
-      # - id: wait_for_build_pay
-      #   name: Wait for builds
-      #   run: |
-      #     # Wait till the pay build finishes
-      #     curl -fsSN $(echo '${{ steps.build_pay_staging.outputs.build }}' | jq -r .output_stream_url)
+      - id: deployment-of-dashboard-staging
+        uses: ./.github/workflows/deploy-heroku.yml
+        with:
+          herokuApplication: ${{ matrix.heroku_app }}
+          checkoutBranch: develop
