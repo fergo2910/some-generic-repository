@@ -5,6 +5,7 @@ on:
 
 jobs:
   create_release_branch:
+    name: Create Release Branch
     runs-on: ubuntu-latest
     outputs:
       release_branch_name: ${{ steps.create_release_branch.outputs.release_branch_name }}
@@ -24,6 +25,7 @@ jobs:
     needs: [create_release_branch]
     name: Deploy to Heroku
     uses: ./.github/workflows/deploy-heroku-app.yml
+    secrets: inherit
     with:
       herokuApplication: staging-tmp
       checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
