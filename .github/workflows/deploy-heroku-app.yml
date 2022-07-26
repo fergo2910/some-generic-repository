@@ -23,13 +23,13 @@ jobs:
       - name: Get source blob link
         id: source_blob_link
         run: |
-          link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ inputs.checkoutBranch }}
+          link=$(./scripts/github-blob-link.sh ${{github.token}} ${{github.repository}} ${{ inputs.checkoutBranch }})
           echo "::add-mask::$link"
           echo ::set-output name=blob_link::$link
       - name: Trigger Heroku build
         id: trigger_build_on_heroku_app
         run: |
-          heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ inputs.herokuApplication }} ${{ steps.source_blob_link.outputs.blob_link }} ${{ inputs.checkoutBranch }}
+          heroku_build=$("./scripts/heroku-deploy.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ inputs.herokuApplication }} ${{ steps.source_blob_link.outputs.blob_link }} ${{ inputs.checkoutBranch }})
           stream_url=$(echo $heroku_build | jq -r .output_stream_url)
           echo ::set-output name=stream_url::$(echo $stream_url)
           build_id=$(echo $heroku_build | jq -r .id)
