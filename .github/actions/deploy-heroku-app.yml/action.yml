@@ -11,7 +11,7 @@ inputs:
     type: string
       
 runs:
-  runs-on: ubuntu-latest
+  using: "composite"
   steps:
     - name: Checkout selected branch
       uses: actions/checkout@v2
