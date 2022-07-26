@@ -59,7 +59,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.18.0
         with:
           channel-id: slack-webhook-tests
-          slack-message: "Staging deployment finished: " ${{ steps.wait_for_release_dashboard.outputs.status }}
+          slack-message: "Staging deployment finished: ${{ steps.wait_for_release_dashboard.outputs.status }}"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
       - name: Fail workflow if needed
