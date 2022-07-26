@@ -21,6 +21,7 @@ jobs:
           git push origin $release_branch_name
           echo ::set-output name=release_branch_name::$release_branch_name
   release_deployment_staging:
+    needs: [create_release_branch]
     name: Deploy to Heroku
     uses: ./.github/workflows/deploy-heroku-app.yml
     with:
