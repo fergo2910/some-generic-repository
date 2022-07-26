@@ -34,8 +34,6 @@ jobs:
           echo ::set-output name=stream_url::$(echo $stream_url)
           build_id=$(echo $heroku_build | jq -r .id)
           echo ::set-output name=build_id::$(echo $build_id)
-          release_id=$(echo $heroku_build | jq -r .release.id)
-          echo ::set-output name=release_id::$(echo $release_id)
       - name: Wait for build on application
         id: wait_for_build
         run: |
@@ -43,24 +41,31 @@ jobs:
       - name: Wait for release on application
         id: wait_for_release_dashboard
         run: |
-          heroku_release=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/releases/${{ steps.trigger_build_on_heroku_app.outputs.release_id }} -H "Accept: application/vnd.heroku+json; version=3" -H "Content-Type: application/json" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
+          heroku_build=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/builds/${{ steps.trigger_build_on_heroku_app.outputs.build_id }} -H "Accept: application/vnd.heroku+json; version=3" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
+          release_id=$(echo $heroku_build | jq -r .release.id)
+          heroku_release=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/releases/$release_id -H "Accept: application/vnd.heroku+json; version=3" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
           stream_url=$(echo $heroku_release | jq -r .output_stream_url)
-          curl -fsSN $(echo '$stream_url')
-          echo "wait"
+          if [ "$stream_url" == "null" ]; then
+            echo "Release stage finished"
+            status=$(echo $heroku_release | jq -r .status)
+          else
+            curl -fsSN $(echo $stream_url)
+            heroku_release=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/releases/$release_id -H "Accept: application/vnd.heroku+json; version=3" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
+            status=$(echo $heroku_release | jq -r .status)
+          fi
+          echo ::set-output name=status::$(echo $status)
       - name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
         with:
           channel-id: slack-webhook-tests
-          slack-message: "Finish Staging"
+          slack-message: "Staging deployment finished: " ${{ steps.wait_for_release_dashboard.outputs.status }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
-      - if: failure()
-        name: Notify Github Actions pipeline
-        id: gh_actions_ststus
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          channel-id: slack-webhook-tests
-          slack-message: "Github actions workflow failed on deployment ${{ inputs.checkoutBranch }} in ${{ inputs.herokuApplication }}"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+      - name: Fail workflow if needed
+        run: |
+          if [ "${{ steps.wait_for_release_dashboard.outputs.status }}" == "succeeded" ]; then
+            echo "Deployment to heroku succee"
+          else
+            exit 1
+          fi

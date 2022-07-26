@@ -1,1 +1,1 @@
-web: gunicorn gettingstarted.wsgi
+web: wait 60s; gunicorn gettingstarted.wsgi
