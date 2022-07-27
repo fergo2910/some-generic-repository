@@ -1,0 +1,34 @@
+name: Heroku - Application Promotion
+
+on:
+  workflow_call:    
+    inputs:
+      herokuApplication:
+        description: "Heroku application name"
+        required: true
+        type: string
+      herokuPipeline:
+        description: "Heroku pipeline ID"
+        required: true
+        type: string
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
+      
+jobs:
+  promote_heroku_application:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Promote application to production
+        id: trigger_promote_to_productiond
+        run: |
+          heroku_promote=$("./scripts/heroku-promote.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ inputs.herokuPipeline }} ${{ inputs.herokuApplication }})
+          echo ::set-output name=promote_id::$(echo $heroku_promote | jq -r .id)
+      - name: Wait for promotion release
+        run: |
+          "./scripts/heroku-promote-wait.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ steps.trigger_promote_to_productiond.outputs.promote_id }}
