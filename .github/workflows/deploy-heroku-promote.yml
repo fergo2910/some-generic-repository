@@ -15,6 +15,20 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
+  workflow_dispatch:    
+    inputs:
+      herokuApplication:
+        description: "Heroku application name"
+        required: true
+        type: string
+      herokuPipeline:
+        description: "Heroku pipeline ID"
+        required: true
+        type: string
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
       
 jobs:
   promote_heroku_application:
