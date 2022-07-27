@@ -60,10 +60,10 @@ jobs:
         with:
           payload: |
             {
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
               "blocks": [
                 {
-                  "type": "divider",
-                  "text": ""
+                  "type": "divider"
                 },
                 {
                   "type": "section",
