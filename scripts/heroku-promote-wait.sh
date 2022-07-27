@@ -1,12 +1,12 @@
 #!/bin/bash
 
 HEROKU_TOKEN=$1
-PIPELINE_ID=$2
+PROMOTE_ID=$2
 
 n=1
 while true
 do
-    promotion_status=$(curl -s -n https://api.heroku.com/pipeline-promotions/"$PIPELINE_ID" \
+    promotion_status=$(curl -s -n https://api.heroku.com/pipeline-promotions/"$PROMOTE_ID" \
         -H "Content-Type: application/json" \
         -H "Accept: application/vnd.heroku+json; version=3" \
         -H "Authorization: Bearer ${HEROKU_TOKEN}" | jq -r .status )
@@ -15,6 +15,7 @@ do
         echo "waiting for promotion to change status..."
     else
         echo "status transitioned to $promotion_status"
+        echo "$PROMOTE_ID"
         break
     fi
     if [[ $n -gt 30 ]]; then
