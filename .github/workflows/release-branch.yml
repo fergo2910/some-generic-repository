@@ -22,14 +22,10 @@ jobs:
           git push origin $release_branch_name
           echo ::set-output name=release_branch_name::$release_branch_name
   release_deployment_staging:
-    strategy:
-      fail-fast: true
-      matrix: 
-        heroku_app: [staging-tmp, staging-temp]
     needs: [create_release_branch]
     name: Deploy to Heroku
     uses: ./.github/workflows/deploy-heroku-app.yml
     secrets: inherit
     with:
-      herokuApplication: ${{ matrix.heroku_app }}
+      herokuApplication: staging-tmp
       checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
