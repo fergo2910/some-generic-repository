@@ -58,8 +58,22 @@ jobs:
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
         with:
-          channel-id: slack-webhook-tests
-          slack-message: "Staging deployment finished: ${{ steps.wait_for_release_dashboard.outputs.status }}"
+          payload: |
+            {
+              "channel": "slack-webhook-tests",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *app* deploy *ss*"
+                  }
+                }
+              ]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
       - name: Fail workflow if needed
