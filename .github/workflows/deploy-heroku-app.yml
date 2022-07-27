@@ -60,7 +60,6 @@ jobs:
         with:
           payload: |
             {
-              "channel": "slack-webhook-tests",
               "blocks": [
                 {
                   "type": "divider"
