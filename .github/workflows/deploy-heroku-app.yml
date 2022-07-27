@@ -62,13 +62,14 @@ jobs:
             {
               "blocks": [
                 {
-                  "type": "divider"
+                  "type": "divider",
+                  "text": ""
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Heroku Application *app* deploy *ss*"
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
                   }
                 }
               ]
