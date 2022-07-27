@@ -23,7 +23,7 @@ jobs:
       - name: Checkout selected branch
         uses: actions/checkout@v2
         with:
-          ref: master
+          ref: ${{ inputs.checkoutBranch }}
       - name: Promote application to production
         id: trigger_promote_to_productiond
         run: |
