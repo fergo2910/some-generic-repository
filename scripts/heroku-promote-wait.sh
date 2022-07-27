@@ -15,7 +15,7 @@ do
         echo "waiting for promotion to change status..."
     else
         echo "status transitioned to $promotion_status"
-        echo "$PROMOTE_ID"
+        echo ::set-output name=promotion_status::$promotion_status
         break
     fi
     if [[ $n -gt 30 ]]; then

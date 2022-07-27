@@ -30,5 +30,35 @@ jobs:
           heroku_promote=$("./scripts/heroku-promote.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ inputs.herokuPipeline }} ${{ inputs.herokuApplication }})
           echo ::set-output name=promote_id::$(echo $heroku_promote | jq -r .id)
       - name: Wait for promotion release
+        id: wait_for_promotion
         run: |
           "./scripts/heroku-promote-wait.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ steps.trigger_promote_to_productiond.outputs.promote_id }}
+      - name: Notify Heroku pipeline promotion
+        id: slack_heroku_status
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Heroku Pipeline *${{ inputs.herokuPipeline }}* promotion to production *${{ steps.wait_for_promotion.outputs.promotion_status }}*",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_promotion.outputs.promotion_status }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+      - name: Fail workflow if needed
+        run: |
+          if [ "${{ steps.wait_for_promotion.outputs.promotion_status }}" == "completed" ]; then
+            echo "Deployment to heroku completed"
+          else
+            exit 1
+          fi
