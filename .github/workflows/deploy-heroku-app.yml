@@ -11,7 +11,10 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-      
+    secrets:
+      input_slack_webhook_url:
+        description: "Slack webhook url to post notification"
+        required: false
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
@@ -75,7 +78,7 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.input_slack_webhook_url  || secrets.SLACK_DEVOPS_WEBHOOK_URL }}
       - name: Fail workflow if needed
         run: |
           if [ "${{ steps.wait_for_release_dashboard.outputs.status }}" == "succeeded" ]; then
