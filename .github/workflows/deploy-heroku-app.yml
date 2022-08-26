@@ -75,7 +75,8 @@ jobs:
           echo ::set-output name=status::$(echo $status)
       - name: Set environment variables
         run: |
-          case ${{ inputs.environment }} in
+          input_env=${{ inputs.environment }}
+          case $input_env in
 
             develop)
               echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
