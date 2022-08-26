@@ -79,7 +79,7 @@ jobs:
           case $input_env in
 
             develop)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
               ;;
 
             staging)
@@ -87,11 +87,11 @@ jobs:
               ;;
 
             production)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}" >> $GITHUB_ENV
               ;;
 
             *)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
               ;;
           esac
       - name: Notify Heroku application deployment
