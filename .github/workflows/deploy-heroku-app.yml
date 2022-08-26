@@ -80,18 +80,22 @@ jobs:
 
             develop)
               echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "selected env develop"
               ;;
 
             staging)
               echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "selected env staging"
               ;;
 
             production)
               echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "selected env production"
               ;;
 
             *)
               echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
+              echo "selected env alv"
               ;;
           esac
       - name: Notify Heroku application deployment
