@@ -14,7 +14,7 @@ on:
       environment:
         description: "Which environment is being deployed"
         required: false
-        type: sting
+        type: string
         default: develop
 jobs:
   deploy_heroku_application:
