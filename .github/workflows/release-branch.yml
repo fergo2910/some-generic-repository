@@ -29,12 +29,14 @@ jobs:
     with:
       herokuApplication: staging-tmp
       checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-  promote_release_to_production:
-    needs: [release_deployment_staging]
-    name: Promote release to production
-    uses: ./.github/workflows/deploy-heroku-promote.yml
-    secrets: inherit
-    with:
-      herokuApplication: staging-tmp
-      herokuPipeline: devops-tmp-pipeline
-      checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+    secrets:
+      input_slack_webhook_url: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
+  # promote_release_to_production:
+  #   needs: [release_deployment_staging]
+  #   name: Promote release to production
+  #   uses: ./.github/workflows/deploy-heroku-promote.yml
+  #   secrets: inherit
+  #   with:
+  #     herokuApplication: staging-tmp
+  #     herokuPipeline: devops-tmp-pipeline
+  #     checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
