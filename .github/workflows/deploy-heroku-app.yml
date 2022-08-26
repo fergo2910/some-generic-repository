@@ -15,6 +15,20 @@ on:
       input_slack_webhook_url:
         description: "Slack webhook url to post notification"
         required: false
+  workflow_dispatch:    
+    inputs:
+      herokuApplication:
+        description: "Heroku application name"
+        required: true
+        type: string
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
+    secrets:
+      input_slack_webhook_url:
+        description: "Slack webhook url to post notification"
+        required: false
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
