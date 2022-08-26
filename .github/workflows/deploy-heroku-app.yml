@@ -73,7 +73,7 @@ jobs:
             status=$(echo $heroku_release | jq -r .status)
           fi
           echo ::set-output name=status::$(echo $status)
-      - if: input.environment == "staging"
+      - if: inputs.environment == "staging"
         name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
@@ -96,7 +96,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
-      - if: input.environment == "production"
+      - if: inputs.environment == "production"
         name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
@@ -119,7 +119,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
-      - if: input.environment != "production" && input.environment != "staging"
+      - if: inputs.environment != "production" && inputs.environment != "staging"
         name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
