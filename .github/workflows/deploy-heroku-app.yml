@@ -16,6 +16,21 @@ on:
         required: false
         type: string
         default: develop
+  workflow_dispatch:    
+    inputs:
+      herokuApplication:
+        description: "Heroku application name"
+        required: true
+        type: string
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
+      environment:
+        description: "Which environment is being deployed"
+        required: false
+        type: string
+        default: develop
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
