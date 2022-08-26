@@ -73,32 +73,54 @@ jobs:
             status=$(echo $heroku_release | jq -r .status)
           fi
           echo ::set-output name=status::$(echo $status)
-      - name: Set environment variables
-        run: |
-          input_env=${{ inputs.environment }}
-          case $input_env in
-
-            develop)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
-              echo "selected env develop"
-              ;;
-
-            staging)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
-              echo "selected env staging"
-              ;;
-
-            production)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}" >> $GITHUB_ENV
-              echo "selected env production"
-              ;;
-
-            *)
-              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
-              echo "selected env alv"
-              ;;
-          esac
-      - name: Notify Heroku application deployment
+      - if: ${{ input.environment }} == "staging"
+        name: Notify Heroku application deployment
+        id: slack_heroku_status
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
+      - if: ${{ input.environment }} == "production"
+        name: Notify Heroku application deployment
+        id: slack_heroku_status
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
+      - if: ${{ input.environment }} != "production" && ${{ input.environment }} != "staging"
+        name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
         with:
