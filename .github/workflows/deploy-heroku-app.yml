@@ -11,24 +11,11 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-    secrets:
-      input_slack_webhook_url:
-        description: "Slack webhook url to post notification"
+      environment:
+        description: "Which environment is being deployed"
         required: false
-  workflow_dispatch:    
-    inputs:
-      herokuApplication:
-        description: "Heroku application name"
-        required: true
-        type: string
-      checkoutBranch:
-        description: "Which branch are we deploying from"
-        required: true
-        type: string
-    secrets:
-      input_slack_webhook_url:
-        description: "Slack webhook url to post notification"
-        required: false
+        type: sting
+        default: develop
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
@@ -71,6 +58,26 @@ jobs:
             status=$(echo $heroku_release | jq -r .status)
           fi
           echo ::set-output name=status::$(echo $status)
+      - name: Set environment variables
+        run: |
+          case ${{ inputs.environment }} in
+
+            develop)
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
+              ;;
+
+            staging)
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}" >> $GITHUB_ENV
+              ;;
+
+            production)
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}" >> $GITHUB_ENV
+              ;;
+
+            *)
+              echo "SLACK_DEVOPS_WEBHOOK_URL=${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}" >> $GITHUB_ENV
+              ;;
+          esac
       - name: Notify Heroku application deployment
         id: slack_heroku_status
         uses: slackapi/slack-github-action@v1.18.0
@@ -92,7 +99,7 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.input_slack_webhook_url  || secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
       - name: Fail workflow if needed
         run: |
           if [ "${{ steps.wait_for_release_dashboard.outputs.status }}" == "succeeded" ]; then
