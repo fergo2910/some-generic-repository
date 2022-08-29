@@ -11,11 +11,16 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-      environment:
-        description: "Which environment is being deployed"
+      heroku_environment:
+        description: "Environment to notify the build and deploy"
         required: false
         type: string
         default: develop
+      enableNotification:
+        description: "Always true unless specified otherwise"
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:    
     inputs:
       herokuApplication:
@@ -26,11 +31,16 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-      environment:
-        description: "Which environment is being deployed"
+      heroku_environment:
+        description: "Environment to notify the build and deploy"
         required: false
         type: string
         default: develop
+      enableNotification:
+        description: "Always true unless specified otherwise"
+        required: false
+        type: boolean
+        default: true
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
@@ -79,7 +89,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "text": "staging",
               "blocks": [
                 {
                   "type": "divider"
@@ -88,7 +98,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                    "text": "staging"
                   }
                 }
               ]
@@ -101,7 +111,7 @@ jobs:
         with:
           payload: |
             {
-              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "text": "production",
               "blocks": [
                 {
                   "type": "divider"
@@ -110,20 +120,20 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                    "text": "production"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
-      - if: ${{ inputs.environment }} != "production" && ${{ inputs.environment }} != "staging"
+      - if: ${{ inputs.enableNotification }} && ${{ inputs.heroku_environment }} != "staging" && ${{ inputs.heroku_environment }} != "production"
         name: Notify Heroku application deployment
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "text": "develop",
               "blocks": [
                 {
                   "type": "divider"
@@ -132,7 +142,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                    "text": "develop"
                   }
                 }
               ]
