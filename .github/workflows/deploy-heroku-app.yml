@@ -83,13 +83,13 @@ jobs:
             status=$(echo $heroku_release | jq -r .status)
           fi
           echo ::set-output name=status::$(echo $status)
-      - if: ${{ inputs.environment }} == "staging"
+      - if: ${{ inputs.enableNotification && inputs.environment == "staging" }}
         name: Notify Heroku application deployment
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "staging",
+              "text": "staging ${{ inputs.heroku_environment }}",
               "blocks": [
                 {
                   "type": "divider"
@@ -98,20 +98,20 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "staging"
+                    "text": "staging ${{ inputs.heroku_environment }}"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
-      - if: ${{ inputs.environment }} == "production"
+      - if: ${{ inputs.enableNotification && inputs.environment == "production" }}
         name: Notify Heroku application deployment
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "production",
+              "text": "production ${{ inputs.heroku_environment }}",
               "blocks": [
                 {
                   "type": "divider"
@@ -120,20 +120,20 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "production"
+                    "text": "production ${{ inputs.heroku_environment }}"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
-      - if: ${{ inputs.enableNotification }} && ${{ inputs.heroku_environment }} != "staging" && ${{ inputs.heroku_environment }} != "production"
+      - if: ${{ inputs.enableNotification && inputs.heroku_environment != "staging" && inputs.heroku_environment != "production" }}
         name: Notify Heroku application deployment
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "develop",
+              "text": "develop ${{ inputs.heroku_environment }}",
               "blocks": [
                 {
                   "type": "divider"
@@ -142,7 +142,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "develop"
+                    "text": "develop ${{ inputs.heroku_environment }}"
                   }
                 }
               ]
