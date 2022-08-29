@@ -29,7 +29,7 @@ jobs:
     with:
       herokuApplication: staging-tmp
       checkoutBranch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      environment: staging
+      heroku_environment: staging
   # promote_release_to_production:
   #   needs: [release_deployment_staging]
   #   name: Promote release to production

@@ -15,6 +15,16 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
+      heroku_environment:
+        description: "Environment to notify the build and deploy"
+        required: false
+        type: string
+        default: develop
+      enableNotification:
+        description: "Always true unless specified otherwise"
+        required: false
+        type: boolean
+        default: true
   workflow_dispatch:    
     inputs:
       herokuApplication:
@@ -29,6 +39,16 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
+      heroku_environment:
+        description: "Environment to notify the build and deploy"
+        required: false
+        type: string
+        default: develop
+      enableNotification:
+        description: "Always true unless specified otherwise"
+        required: false
+        type: boolean
+        default: true
       
 jobs:
   promote_heroku_application:
@@ -47,13 +67,13 @@ jobs:
         id: wait_for_promotion
         run: |
           "./scripts/heroku-promote-wait.sh" ${{secrets.HEROKU_API_TOKEN}} ${{ steps.trigger_promote_to_productiond.outputs.promote_id }}
-      - name: Notify Heroku pipeline promotion
-        id: slack_heroku_status
+      - if: ${{ inputs.enableNotification }} && ${{ inputs.heroku_environment }} != "staging" && ${{ inputs.heroku_environment }} != "production"
+        name: Notify Heroku pipeline promotion
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "Heroku Pipeline *${{ inputs.herokuPipeline }}* promotion to production *${{ steps.wait_for_promotion.outputs.promotion_status }}*",
+              "text": "develop notification",
               "blocks": [
                 {
                   "type": "divider"
@@ -62,13 +82,35 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_promotion.outputs.promotion_status }}*"
+                    "text": "develop notification"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+      - if: ${{ inputs.enableNotification }} && ${{ inputs.heroku_environment }} == "staging"
+        name: Notify Heroku pipeline promotion
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "staging notification",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "staging notification"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
       - name: Fail workflow if needed
         run: |
           if [ "${{ steps.wait_for_promotion.outputs.promotion_status }}" == "completed" ]; then
