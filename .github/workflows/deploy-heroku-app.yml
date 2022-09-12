@@ -1,7 +1,7 @@
-name: Heroku Application Deployment
+name: Heroku - Application Deployment
 
 on:
-  workflow_call:    
+  workflow_call:
     inputs:
       herokuApplication:
         description: "Heroku application name"
@@ -11,17 +11,17 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-      heroku_environment:
-        description: "Environment to notify the build and deploy"
-        required: false
-        type: string
-        default: develop
       enableNotification:
         description: "Always true unless specified otherwise"
         required: false
         type: boolean
         default: true
-  workflow_dispatch:    
+      environment:
+        description: "Environment to notify the build and deploy"
+        required: false
+        type: string
+        default: develop
+  workflow_dispatch:
     inputs:
       herokuApplication:
         description: "Heroku application name"
@@ -31,20 +31,32 @@ on:
         description: "Which branch are we deploying from"
         required: true
         type: string
-      heroku_environment:
-        description: "Environment to notify the build and deploy"
-        required: false
-        type: string
-        default: develop
       enableNotification:
         description: "Always true unless specified otherwise"
         required: false
         type: boolean
         default: true
+      environment:
+        description: "Environment to notify the build and deploy"
+        required: false
+        type: string
+        default: develop
+
+# We don't need to limit concurrency in this workflow since this is a reusable workflow triggered only by other workflows
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
+
 jobs:
   deploy_heroku_application:
     runs-on: ubuntu-latest
     steps:
+      - name: Clear Cache
+        run: |
+          apt-get update -y && apt-get install curl gnupg nodejs -y
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku plugins:install heroku-builds
+          HEROKU_API_KEY=${{ secrets.HEROKU_API_TOKEN }} heroku builds:cache:purge -a ${{ inputs.herokuApplication }} --confirm ${{ inputs.herokuApplication }}
       - name: Checkout selected branch
         uses: actions/checkout@v2
         with:
@@ -75,21 +87,21 @@ jobs:
           heroku_release=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/releases/$release_id -H "Accept: application/vnd.heroku+json; version=3" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
           stream_url=$(echo $heroku_release | jq -r .output_stream_url)
           if [ "$stream_url" == "null" ]; then
-            echo "Release stage finished"
             status=$(echo $heroku_release | jq -r .status)
+            echo "Release stage $status"
           else
             curl -fsSN $(echo $stream_url)
             heroku_release=$(curl -fsSv https://api.heroku.com/apps/${{ inputs.herokuApplication }}/releases/$release_id -H "Accept: application/vnd.heroku+json; version=3" -H "Authorization: Bearer ${{ secrets.HEROKU_API_TOKEN }}")
             status=$(echo $heroku_release | jq -r .status)
           fi
           echo ::set-output name=status::$(echo $status)
-      - if: ${{ inputs.enableNotification == 'true' && inputs.heroku_environment == 'staging' }}
+      - if: inputs.enableNotification && (inputs.environment != 'staging') && (inputs.environment != 'production')
         name: Notify Heroku application deployment
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "text": "staging ${{ inputs.heroku_environment }}",
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
               "blocks": [
                 {
                   "type": "divider"
@@ -98,61 +110,65 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "staging ${{ inputs.heroku_environment }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
-      - if: ${{ inputs.enableNotification == 'true' && inputs.heroku_environment == 'production' }}
-        name: Notify Heroku application deployment
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "text": "production ${{ inputs.heroku_environment }}",
-              "blocks": [
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "production ${{ inputs.heroku_environment }}"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
-      - if: ${{ inputs.enableNotification == 'true' && inputs.heroku_environment != 'staging' && inputs.heroku_environment != 'production' }}
-        name: Notify Heroku application deployment
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "text": "develop ${{ inputs.heroku_environment }}",
-              "blocks": [
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "develop ${{ inputs.heroku_environment }}"
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
                   }
                 }
               ]
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_WEBHOOK_URL }}
+      - if: inputs.enableNotification && (inputs.environment == 'staging')
+        name: Notify Heroku application deployment
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_STAGING_WEBHOOK_URL }}
+      - if: inputs.enableNotification && (inputs.environment == 'production')
+        name: Notify Heroku application deployment
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Heroku Application *${{ inputs.herokuApplication }}* deployment *${{ steps.wait_for_release_dashboard.outputs.status }}*",
+              "blocks": [
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Heroku Application *${{ inputs.herokuApplication }}* deploy *${{ steps.wait_for_release_dashboard.outputs.status }}*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_DEVOPS_PRODUCTION_WEBHOOK_URL }}
       - name: Fail workflow if needed
         run: |
           if [ "${{ steps.wait_for_release_dashboard.outputs.status }}" == "succeeded" ]; then
-            echo "Deployment to heroku succee"
+            echo "Deployment to heroku succeeded"
           else
-            exit 1
+            if [ "${{ steps.wait_for_release_dashboard.outputs.status }}" == "pending" ]; then
+              echo "Deployment still pending"
+            else
+              exit 1
+            fi
           fi
