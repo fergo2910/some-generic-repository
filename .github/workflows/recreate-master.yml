@@ -1,0 +1,34 @@
+name: Heroku - Promote release to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
+
+jobs:
+  create_master_branch:
+    needs: [restart_killed_syncs]
+    name: Create master branch from release branch and Notify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.checkoutBranch }}
+      - name: Delete master branch
+        run: |
+          git checkout ${{ inputs.checkoutBranch }}
+          git branch -D master
+          git checkout -b master
+          git push origin master --force --no-verify
