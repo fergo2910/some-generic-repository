@@ -20,6 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: master
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ inputs.checkoutBranch }}
       - name: Delete master branch
         run: |
           git branch -v
