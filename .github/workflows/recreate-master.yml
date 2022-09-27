@@ -16,7 +16,6 @@ on:
 
 jobs:
   create_master_branch:
-    needs: [restart_killed_syncs]
     name: Create master branch from release branch and Notify
     runs-on: ubuntu-latest
     steps:
