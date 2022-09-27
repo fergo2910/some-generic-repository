@@ -21,12 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: master
-      - uses: actions/checkout@v2
-        with:
           ref: ${{ inputs.checkoutBranch }}
       - name: Delete master branch
         run: |
+          git checkout master
           git checkout ${{ inputs.checkoutBranch }}
           git branch -D master
           git checkout -b master
