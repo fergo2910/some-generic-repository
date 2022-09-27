@@ -20,10 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: ${{ inputs.checkoutBranch }}
       - name: Delete master branch
         run: |
+          git branch -v
           git checkout ${{ inputs.checkoutBranch }}
           git checkout -b master
           git push origin master --force --no-verify
