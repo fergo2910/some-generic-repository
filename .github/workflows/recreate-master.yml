@@ -24,8 +24,6 @@ jobs:
           ref: ${{ inputs.checkoutBranch }}
       - name: Delete master branch
         run: |
-          git checkout master
           git checkout ${{ inputs.checkoutBranch }}
-          git branch -D master
           git checkout -b master
           git push origin master --force --no-verify
