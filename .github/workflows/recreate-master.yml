@@ -3,7 +3,7 @@ name: tag to issue
 on:
   push:
     tags:
-      - test
+      - test*
 
 jobs:
   start_promotion_pipeline:
