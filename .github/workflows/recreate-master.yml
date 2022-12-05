@@ -1,33 +1,19 @@
 name: Heroku - Promote release to production
 
 on:
-  workflow_dispatch:
-    inputs:
-      checkoutBranch:
-        description: "Which branch are we deploying from"
-        required: true
-        type: string
-  workflow_call:
-    inputs:
-      checkoutBranch:
-        description: "Which branch are we deploying from"
-        required: true
-        type: string
+  push:
+    tags:
+      - test
 
 jobs:
-  create_master_branch:
-    name: Create master branch from release branch and Notify
+  start_promotion_pipeline:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: master
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ inputs.checkoutBranch }}
-      - name: Delete master branch
+      - name: Create issue with pipeline details
         run: |
-          git branch -v
-          git checkout ${{ inputs.checkoutBranch }}
-          git checkout -b master
-          git push origin master --force --no-verify
+          curl \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues \
+          -d '{"title":"Artifact Promotion","body":"New promotion pipeline created for tag ${{github.ref}}","assignees":["fergo2910"],"labels":["promotion-pipeline"]}'
