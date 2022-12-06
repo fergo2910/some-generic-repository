@@ -31,7 +31,7 @@ jobs:
         id: issue
         run: |
           issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues \
-          -d '{"title":"Artifact Promotion","body":"# New promotion pipeline created for tag **${{github.ref}}** \n | Environment | Promoted | \n |---|---| \n | Staging |:black_square_buttom:| \n | Demo  |:black_square_buttom:| \n | Sandbox  |:black_square_buttom:| \n | Production  |:black_square_buttom:|","assignees":["fergo2910"],"labels":["promotion-pipeline"]}')
+          -d '{"title":"Artifact Promotion","body":"# New promotion pipeline created for tag **${{github.ref}}** \n | Environment | Promoted | \n |---|---| \n | Staging |✅| \n | Demo  |🔲| \n | Sandbox  |🔲| \n | Production  |🔲|","assignees":["fergo2910"],"labels":["promotion-pipeline"]}')
           issue_number=$(echo ${issue} | jq '.number')
           echo "Issue ID created"
           echo "https://github.com/${{github.repository}}/issues/${issue_number}"
