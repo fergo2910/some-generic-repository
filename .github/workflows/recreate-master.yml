@@ -12,7 +12,7 @@ jobs:
       - name: Check if a new promotion pipeline already exists
         run: |
           issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
-          https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open | jq '.[]?.number')
+          https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open | jq '.[].number')
           if [[ "$issues" == "" ]];
           then
             echo "No promotion pipeline created."
