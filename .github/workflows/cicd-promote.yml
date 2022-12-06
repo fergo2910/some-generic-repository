@@ -16,8 +16,11 @@ jobs:
           https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open)
           issues_numbers=$(echo ${issues} | jq '.[].number')
           length_issues=$(wc -w <<< "$issues_numbers")
-          if [[ "$length_issues" == "1" ]];
+          if [[ "$length_issues" == "0" ]];
           then
+            echo "Comment from another issue not related to promotion pipeline"
+            exit 0;
+          elif [[ "$length_issues" == "1" ]];
             echo "Only one pipeline ready to promote"
           else
             echo "Two or more promotion pipelines are open. Only one promotion pipelines should exists"
@@ -29,4 +32,6 @@ jobs:
           fi
       - name: Promote to the next environment
         run: |
-          # Get the issue title
+          # Get the issue
+          curl -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}
