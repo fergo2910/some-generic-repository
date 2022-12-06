@@ -1,0 +1,32 @@
+name: tag to issue
+
+on:
+  issue_comment:
+    types: 
+      - created
+
+jobs:
+  promote_pipeline:
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if more than one promotion pipeline exists
+        run: |
+          issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open)
+          issues_numbers=$(echo ${issues} | jq '.[].number')
+          length_issues=$(wc -w <<< "$issues_numbers")
+          if [[ "$length_issues" == "1" ]];
+          then
+            echo "Only one pipeline ready to promote"
+          else
+            echo "Two or more promotion pipelines are open. Only one promotion pipelines should exists"
+            for i in $issues_numbers;
+            do
+              echo "https://github.com/${{github.repository}}/issues/$i"
+            done
+            exit 1;
+          fi
+      - name: Promote to the next environment
+        run: |
+          # Get the issue title

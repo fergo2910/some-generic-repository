@@ -1,0 +1,38 @@
+name: tag to issue
+
+on:
+  push:
+    tags:
+      - test*
+
+jobs:
+  start_promotion_pipeline:
+    runs-on: ubuntu-latest
+    outputs:
+      issue: ${{ steps.issue.outputs.url }}
+    steps:
+      - name: Check if a new promotion pipeline already exists
+        run: |
+          issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open)
+          issues_numbers=$(echo ${issues} | jq '.[].number')
+          if [[ "$issues_numbers" == "" ]];
+          then
+            echo "No promotion pipeline created."
+          else
+            echo "Two or more promotion pipelines are open. Close them first to create a new one"
+            for i in $issues_numbers;
+            do
+              echo "https://github.com/${{github.repository}}/issues/$i"
+            done
+            exit 1;
+          fi
+      - name: Create issue with pipeline details
+        id: issue
+        run: |
+          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues \
+          -d '{"title":"Artifact Promotion","body":"New promotion pipeline created for tag **${{github.ref}}**\n| Environment | Promoted |\n|---|---|\n| Staging |<ul><li>- [x] </li></ul>|\n| Demo  |<ul><li>- [ ] </li></ul>|\n| Sandbox  |<ul><li>- [ ] </li></ul>|\n| Production  |<ul><li>- [ ] </li></ul>|\n","assignees":["fergo2910"],"labels":["promotion-pipeline"]}')
+          issue_number=$(echo ${issue} | jq '.number')
+          echo "Issue ID created"
+          echo "https://github.com/${{github.repository}}/issues/${issue_number}"
+          echo "url=https://github.com/${{github.repository}}/issues/${issue_number}" >> $GITHUB_OUTPUT
