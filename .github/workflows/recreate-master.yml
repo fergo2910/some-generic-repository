@@ -13,30 +13,13 @@ jobs:
         run: |
           issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
           https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open)
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo $issues;
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          issues=$(echo ${issues} | jq '.[].number')
-          echo $issues;
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          echo "###############################"
-          if [[ "$issues" == "" ]];
+          issues_numbers=$(echo ${issues} | jq '.[].number')
+          if [[ "$issues_numbers" == "" ]];
           then
             echo "No promotion pipeline created."
           else
             echo "One or more promotion pipelines are open. Close them first to create a new one"
-            for i in $issues;
+            for i in $issues_numbers;
             do
               echo "https://github.com/${{github.repository}}/issues/$i"
             done
