@@ -13,7 +13,8 @@ jobs:
         run: |
           issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
           https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open | jq '.[]?.number')
-          if [[ "$issues" == "" ]] then;
+          if [[ "$issues" == "" ]];
+          then
             echo "No promotion pipeline created."
           else
             echo "One or more promotion pipelines are open. Close them first to create a new one"
