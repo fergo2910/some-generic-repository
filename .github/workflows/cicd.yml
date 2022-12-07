@@ -20,7 +20,7 @@ jobs:
           then
             echo "No promotion pipeline created."
           else
-            echo "Two or more promotion pipelines are open. Close them first to create a new one"
+            echo "One or more promotion pipelines are open. Close them all first to create a new promotion pipeline"
             for i in $issues_numbers;
             do
               echo "https://github.com/${{github.repository}}/issues/$i"
