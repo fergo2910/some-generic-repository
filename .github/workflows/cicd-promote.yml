@@ -21,6 +21,7 @@ jobs:
             echo "Comment from another issue not related to promotion pipeline"
             exit 0;
           elif [[ "$length_issues" == "1" ]] && [[ "$issues_numbers" == "${{ github.event.issue.number }}" ]];
+          then
             echo "Ready to promote artifacts"
           else
             echo "Two or more promotion pipelines are open. Only one promotion pipelines should exists"
