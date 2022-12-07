@@ -31,6 +31,10 @@ jobs:
             done
             exit 1;
           fi
+      - name: $github
+        run:   echo "$GITHUB_CONTEXT"
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
       - name: Check comment from approver
         run: |
           # Get comments
