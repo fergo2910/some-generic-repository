@@ -9,6 +9,11 @@ jobs:
   promote_pipeline:
     if: ${{ !github.event.issue.pull_request }}
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.comment.outputs.image_tag }}
+      environment: ${{ steps.comment.outputs.environment }}
+      body_array: ${{ steps.comment.outputs.body_array }}
+      index: ${{ steps.comment.outputs.index }}
     steps:
       - name: Check if more than one promotion pipeline exists
         run: |
@@ -32,36 +37,102 @@ jobs:
             exit 1;
           fi
       - name: Check comment from assignees
+        id: comment
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+          ENVIRONMENTS: "staging, demo, sandbox, production"
         run: |
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
-          echo $author
           assignees=$(echo "$GITHUB_CONTEXT" | jq '.event.issue.assignees[].login')
-          echo $assignees
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
-          echo $comment
           # If comment has promote and comes from any of the assignees 
           if [[ "$assignees" == *"$author"* ]] && [[ "$comment" == *"promote"* ]];
           then
-            echo "Is autorized"
+            echo "Pipeline autorized, ready to promote to the next environment"
           else
-            echo "Not authorized"
+            echo "Pipeline comment rejected. Not autorized"
             exit 1;
           fi
-          echo "Pipeline ready to promote"
           # Parse title to get tag to promote
           issue_title=$(echo "$GITHUB_CONTEXT" | jq --raw-output '.event.issue.title')
           title_array=($issue_title)
-          echo "TAG: ${title_array[3]}"
+          tag=${title_array[3]}
+          echo "Release tag: $tag"
           # Parse body to get next environment
           issue_body=$(echo "$GITHUB_CONTEXT" | jq --raw-output '.event.issue.body')
           body_array=($issue_body)
-          # Staging status in index 16
-          echo "Staging value: ${body_array[16]}"
-          # Demo status in index 19
-          echo "Demo value: ${body_array[19]}"
-          # Sandbox status on index 22
-          echo "Sandbox value: ${body_array[22]}"
-          # Production status on index 25
-          echo "Production value: ${body_array[25]}"
+          length_body=$(wc -w <<< "${body_array[@]}")
+          for (( i=0; i<$length_body; i++ ))
+          do
+            if [[ "${body_array[$i]}" == "|🔲|" ]];
+            then
+              env=$(echo "${body_array[$i-1]}" | awk '{print tolower($0)}')
+              if [[ "${ENVIRONMENTS[*]}" =~ "$env" ]];
+              then
+                echo "Env: $env is ready to be promoted"
+              else
+                echo "Environment not found."
+                exit 1
+              fi
+              break
+            fi
+          done
+          echo "image_tag=$tag" >> $GITHUB_OUTPUT
+          echo "environment=$env" >> $GITHUB_OUTPUT
+          echo "body_array=$body_array" >> $GITHUB_OUTPUT
+          echo "index=$i" >> $GITHUB_OUTPUT
+  
+  deploy_release:
+    needs: [promote_pipeline]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Dashboard
+        env:
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+        run: |
+          echo "Release using: Env=$environment Tag:$tag"
+  
+  deploy_dashboard:
+    needs: [promote_pipeline,deploy_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Dashboard
+        env:
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+        run: |
+          echo "Deploying to dashboard using: Env=$environment Tag:$tag"
+  
+  deploy_Pay:
+    needs: [promote_pipeline,deploy_release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Pay
+        env:
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+        run: |
+          echo "Deploying to Pay using: Env=$environment Tag:$tag"
+  
+  update_pipeline:
+    needs: [deploy_dashboard,deploy_Pay,promote_pipeline]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update issue body with new promotion
+        env:
+          body_array: ${{ needs.promote_pipeline.outputs.body_array }}
+          index: ${{ needs.promote_pipeline.outputs.index }}
+        run: |
+          new_body=""
+          length_body=$(wc -w <<< "${body_array[@]}")
+          for (( i=0; i<$length_body; i++ ))
+          do
+            if [[ $i == $index ]];
+            then
+              new_body=$(echo "$new_body |✅|")
+            else
+              new_body=$(echo "$new_body ${body_array[$i]}")
+            fi
+          done
+          echo $new_body
