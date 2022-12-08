@@ -32,8 +32,10 @@ jobs:
         run: |
           tag_name=$(echo ${GITHUB_REF#refs/tags/})
           echo $tag_name
+          payload="{\"title\":\"Artifact Promotion for $tag_name\",\"body\":\"# New promotion pipeline created for tag $tag_name \n | Environment | Promoted | \n |---|---| \n | Staging |\342\234\205| \n | Demo  |\360\237\224\262| \n | Sandbox  |\360\237\224\262| \n | Production  |\360\237\224\262|\",\"assignees\":[\"fergo2910\"],\"labels\":[\"promotion-pipeline\"]}"
+          echo $payload
           issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues \
-          -d "{\"title\":\"Artifact Promotion for $tag_name\",\"body\":\"# New promotion pipeline created for tag $tag_name \n | Environment | Promoted | \n |---|---| \n | Staging |\342\234\205| \n | Demo  |\360\237\224\262| \n | Sandbox  |\360\237\224\262| \n | Production  |\360\237\224\262|\",\"assignees\":[\"fergo2910\"],\"labels\":[\"promotion-pipeline\"]}")
+          -d "$payload")
           issue_number=$(echo ${issue} | jq '.number')
           if [[ $issue_number != "null" ]];
           then
