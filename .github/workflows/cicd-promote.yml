@@ -35,7 +35,6 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
-          echo "$GITHUB_CONTEXT"
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
           echo $author
           assignees=$(echo "$GITHUB_CONTEXT" | jq '.event.issue.assignees[].login')
@@ -43,8 +42,10 @@ jobs:
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
           echo $comment
           # If comment has promote and comes from any of the assignees 
-          if [[ *"$author"* != "$assignees" ]] && [[ *"promote"* != "$comment" ]];
+          if [[ "$assignees" == *"$author"* ]] && [[ "$comment" == *"promote"* ]];
           then
+            echo "Is autorized"
+          else
             echo "Not authorized"
             exit 1;
           fi
