@@ -35,7 +35,7 @@ jobs:
           branch_name=$(echo ${GITHUB_REF#refs/})
           branch_name=$(echo ${branch_name#heads/})
           branch_name=$(echo ${branch_name#tags/})
-          branch_name=$(echo ${branch_name})| tr '/' '-')
+          branch_name=$(echo ${branch_name} | tr '/' '-')
           echo $branch_name
           payload="{\"title\":\"Artifact Promotion for $tag_name\",\"body\":\"# New promotion pipeline created for tag $tag_name \n | Environment | Promoted | \n |---|---| \n | Staging |✅| \n | Demo  |🔲| \n | Sandbox  |🔲| \n | Production  |🔲|\",\"assignees\":[\"fergo2910\"],\"labels\":[\"promotion-pipeline\"]}"
           echo $payload
