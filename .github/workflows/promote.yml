@@ -5,6 +5,11 @@ on:
     types: 
       - created
 
+permissions:
+  id-token: write
+  contents: write
+  issues: write
+
 jobs:
   promote_pipeline:
     if: ${{ !github.event.issue.pull_request }}
