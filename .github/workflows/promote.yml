@@ -43,7 +43,7 @@ jobs:
         run: |
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
-          # If comment has promote and comes from any of the assignees 
+          echo $author
           if [[ "$author" == *"$approvers"* ]] && [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
