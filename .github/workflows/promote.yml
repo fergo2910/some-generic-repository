@@ -33,7 +33,7 @@ jobs:
             echo "Promotion Pipeline not found in database"
             exit 1;
           else
-            echo "state=${state}" >> $Env:GITHUB_OUTPUT
+            echo "state=${state}" >> $GITHUB_OUTPUT
           fi
       - name: Check comment from assignees
         id: check
