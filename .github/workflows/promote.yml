@@ -27,8 +27,10 @@ jobs:
       - name: Get promotion pipeline state
         id: state
         run: |
-          state=$(aws dynamodb get-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}')
+          state=$(aws dynamodb get-item --output json --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' | jq '.Item')
           state=$(echo $state | tr -d '\n')
+          state_json=$(echo $state | jq)
+          echo $state_json
           if [[ "$state" == "" ]];
           then
             echo "Promotion Pipeline not found in database"
