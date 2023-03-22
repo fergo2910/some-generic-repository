@@ -58,6 +58,7 @@ jobs:
           accounts_ids: '{"staging": 963448533985,"develop": 968295074588,"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
         run: |
           # Promote to the next environment
+          echo $STATE
           tag = $(echo $STATE | jq '.Item.tag.S')
           staging = $(echo $STATE | jq '.Item.staging.BOOL')
           demo = $(echo $STATE | jq '.Item.demo.BOOL')
@@ -103,112 +104,10 @@ jobs:
     needs: [promote_pipeline]
     steps:
       - name: Checkout helm repository
-        uses: actions/checkout@v2
-        with:
-          repository: Tesorio/helm
-          token: ${{ secrets.PAT_GITHUB }}
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: v1.23.5
-      - name: Install helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.8.2
-      - name: Configure AWS Credentials
-        env:
-          account: ${{ needs.promote_pipeline.outputs.account }}
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::${account}:role/gh-deployment-role
-          aws-region: us-east-1
-      - name: Run migrations
-        env:
-          environment: ${{ needs.promote_pipeline.outputs.environment }}
-          tag: ${{ needs.promote_pipeline.outputs.tag }}
         run: |
-          # Access to the EKS cluster
-          aws eks update-kubeconfig --name $environment-eks-cluster
-          # Remove migration job
-          cd migration-job
-          helm uninstall migration-job -n $environment || true
-          # Run release phase
-          helm install migration-job . -n $environment --set=environment=$environment --set=image.tag=$tag
-          # Wait for job to finish
-          TIMEOUT=0 # 5 MIN
-          lastStatus=""
-          until [ $TIMEOUT -eq 300 ] || [[ $lastStatus == "finished" ]];
-          do
-            sleep 1s
-            TIMEOUT=$((TIMEOUT + 1))
-            failedJob=$(kubectl get jobs migration-job -n dashboard -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
-            completedJob=$(kubectl get jobs migration-job -n dashboard -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
-            if [[ $failedJob == "True" ]] || [[ $completedJob == "True" ]];
-            then
-              lastStatus="finished"
-            else
-              echo "`date` - waiting migration status..."
-            fi
-          done
-          # Show output
-          echo -e "\n********** migration-job logs ********** \n"
-          kubectl logs -ljob-name=migration-job -n dashboard --tail 2000
-          echo -e "\n**********        End logs        ********** \n"
-          if [[ $lastStatus == "finished" ]];
-          then
-            if [[ $failedJob == "True" ]];
-            then
-              echo "Migration job failed";
-              exit 1
-            fi
-          else
-            echo -e "\e[93mTime out $timeout_sec sec...\e[0m\n";
-            exit 1
-          fi
-  
-  deploy_dashboard:
-    needs: [promote_pipeline, deploy_release]
-    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
-    with:
-      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
-      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
-      EKS_HELM_CHART: dashboard
-      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
-    secrets:
-      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
-
-  deploy_pay:
-    needs: [promote_pipeline, deploy_release]
-    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
-    with:
-      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
-      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
-      EKS_HELM_CHART: pay
-      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
-    secrets:
-      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
-
-  deploy_workers:
-    needs: [promote_pipeline, deploy_release]
-    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
-    with:
-      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
-      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
-      EKS_HELM_CHART: workers
-      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
-    secrets:
-      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
-
-  deploy_schedule:
-    needs: [promote_pipeline, deploy_release]
-    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
-    with:
-      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
-      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
-      EKS_HELM_CHART: schedule-job
-      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
-    secrets:
-      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
+          echo "release"
+          echo "deploy"
+          echo "notify"
   
   update_pipeline:
     needs: [promote_pipeline, deploy_dashboard, deploy_Pay, deploy_workers, deploy_schedule]
