@@ -57,15 +57,14 @@ jobs:
       - name: Get next environment
         id: promote
         env:
-          STATE: ${{ steps.state.outputs.state }}
           accounts_ids: '{"staging": 963448533985,"develop": 968295074588,"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
         run: |
           # Promote to the next environment
-          tag=$(echo '${STATE}' | jq '.tag.S')
-          staging=$(echo $STATE | jq '.staging.BOOL')
-          demo=$(echo $STATE | jq '.demo.BOOL')
-          sandbox=$(echo $STATE | jq '.sandbox.BOOL')
-          production=$(echo $STATE | jq '.production.BOOL')
+          tag=$(echo ${steps.state.output.state} | jq '.tag.S')
+          staging=$(echo ${steps.state.output.state} | jq '.staging.BOOL')
+          demo=$(echo ${steps.state.output.state} | jq '.demo.BOOL')
+          sandbox=$(echo ${steps.state.output.state} | jq '.sandbox.BOOL')
+          production=$(echo ${steps.state.output.state} | jq '.production.BOOL')
           environment=""
           account=""
           if [[ "$staging" == "true "]];
