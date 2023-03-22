@@ -60,11 +60,11 @@ jobs:
           accounts_ids: '{"staging": 963448533985,"develop": 968295074588,"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
         run: |
           # Promote to the next environment
-          tag=$(echo ${steps.state.output.state} | jq '.tag.S')
-          staging=$(echo ${steps.state.output.state} | jq '.staging.BOOL')
-          demo=$(echo ${steps.state.output.state} | jq '.demo.BOOL')
-          sandbox=$(echo ${steps.state.output.state} | jq '.sandbox.BOOL')
-          production=$(echo ${steps.state.output.state} | jq '.production.BOOL')
+          tag=$(echo ${{steps.state.output.state}} | jq '.tag.S')
+          staging=$(echo ${{steps.state.output.state}} | jq '.staging.BOOL')
+          demo=$(echo ${{steps.state.output.state}} | jq '.demo.BOOL')
+          sandbox=$(echo ${{steps.state.output.state}} | jq '.sandbox.BOOL')
+          production=$(echo ${{steps.state.output.state}} | jq '.production.BOOL')
           environment=""
           account=""
           if [[ "$staging" == "true "]];
