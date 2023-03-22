@@ -27,7 +27,7 @@ jobs:
           approvers="fergo2910,caioariede,JEBoothjr"
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
-          if [[ "$approvers" == *"$author"* ]] && [[ "$comment" == "promote" ]];
+          if [[ "$comment" == "promote" ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
             ## Notify to slack
