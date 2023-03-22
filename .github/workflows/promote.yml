@@ -110,7 +110,7 @@ jobs:
           echo "notify"
   
   update_pipeline:
-    needs: [promote_pipeline, deploy_dashboard, deploy_Pay, deploy_workers, deploy_schedule]
+    needs: [promote_pipeline, deploy_release]
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
