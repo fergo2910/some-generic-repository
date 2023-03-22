@@ -1,0 +1,113 @@
+name: EKS Staging build and deploy pipeline
+
+on:
+  push:
+    tags:
+      - hotfix-*
+      - release/*
+
+# Cancel in progress builds
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+  issues: write
+
+jobs:
+  notify_staging_deployment_started:
+    name: Notify Staging Deployment Started
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Staging Deployment Started
+        run: |
+          echo "new pipeline started"
+
+  tags:
+    runs-on: ubuntu-latest
+    outputs:
+      sha7: ${{ steps.sha7.outputs.sha7 }}
+    steps:
+      - name: Extract SHA with 7 characters
+        id: sha7
+        run: echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract SHA with 7 characters
+        run: echo "build all apps"
+      
+  release:
+    runs-on: ubuntu-latest
+    needs: [tags, build]
+    steps:
+      - name: Checkout helm repository
+        run: echo "release"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [tags, release]
+    steps:
+      - name: Checkout helm repository
+        run: echo "release"
+      
+  notify_staging_deployment_finished:
+    needs: [tags, deploy]
+    name: Notify Staging Deployment finished
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Staging Deployment finished
+        run: |
+          echo "deployment to staging finish"
+
+  start_promotion_pipeline:
+    needs: [tags, notify_staging_deployment_finished]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if a new promotion pipeline already exists
+        run: |
+          issues=$(curl -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues?labels=promotion-pipeline&state=open)
+          issues_numbers=$(echo ${issues} | jq '.[].number')
+          if [[ "$issues_numbers" == "" ]];
+          then
+            echo "No promotion pipeline created."
+          else
+            echo "One or more promotion pipelines are open. Close them all first to create a new promotion pipeline"
+            for i in $issues_numbers;
+            do
+              echo "https://github.com/${{github.repository}}/issues/$i"
+            done
+            exit 1;
+          fi
+      - name: Create issue with pipeline details
+        id: issue
+        run: |
+          payload="{\"title\":\"AWS PIPELINE: Artifact Promotion for ${{ needs.tags.outputs.sha7 }}\",\"body\":\"# New promotion pipeline created for tag ${{ needs.tags.outputs.sha7 }} \n | Environment | Status | \n |---|---| \n | Staging | Deployed | \n | Demo  | Pending | \n | Sandbox  | Pending | \n | Production  | Pending |\",\"assignees\":[\"fergo2910\"],\"labels\":[\"promotion-pipeline\"]}"
+          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues -d "$payload" | jq '.number')
+          if [[ $issue != "null" ]];
+          then
+            echo "Issue ID created"
+            echo "https://github.com/${{github.repository}}/issues/${issue}"
+            echo "url=https://github.com/${{github.repository}}/issues/${issue}" >> $GITHUB_OUTPUT
+            echo "issue_number=$issue" >> $GITHUB_OUTPUT
+          else
+            echo "Error creating the issue"
+            exit 1
+          fi
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::602655069356:role/gh-deployment-role
+          aws-region: us-east-1
+      - name: Store state in DynamoDB
+        id: state
+        run: |
+          aws dynamodb put-item --table-name dashboard-promotion-pipeline --item '{"issue":{"N":"${{ steps.issue.outputs.issue_number }}"},"tag":{"S":"${{ needs.tags.outputs.sha7 }}"},"staging":{"BOOL":true},"demo":{"BOOL":false},"sandbox":{"BOOL":false},"production":{"BOOL":false}}'
+      - id: notify_deployment_staging
+        name: Slack Notification deployment on staging
+        run: |
+          echo "pipeline created, issue id: " ${{ steps.issue.output.url}}

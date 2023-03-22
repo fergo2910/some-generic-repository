@@ -1,0 +1,247 @@
+name: EKS Promotion pipeline
+
+on:
+  issue_comment:
+    types: 
+      - created
+
+jobs:
+  promote_pipeline:
+    if: ${{ !github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.promote.outputs.environment }}
+      account: ${{ steps.promote.outputs.account }}
+      tag: ${{ steps.promote.outputs.tag }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::602655069356:role/gh-deployment-role
+          aws-region: us-east-1
+      - name: Get promotion pipeline state
+        id: state
+        run: |
+          state=$(aws dynamodb get-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}')
+          if [[ "$state" == "" ]];
+          then
+            echo "Promotion Pipeline not found in database"
+            exit 1;
+          else
+            echo "state=$state" >> $GITHUB_OUTPUT
+          fi
+      - name: Check comment from assignees
+        id: check
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
+          assignees=$(echo "$GITHUB_CONTEXT" | jq '.event.issue.assignees[].login')
+          comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
+          # If comment has promote and comes from any of the assignees 
+          if [[ "$assignees" == *"$author"* ]] && [[ "$comment" == *"promote"* ]];
+          then
+            echo "Pipeline autorized, ready to promote to the next environment"
+          else
+            echo "Pipeline comment rejected. Not autorized"
+            exit 1;
+          fi
+      - name: Get next environment
+        id: promote
+        env:
+          STATE: ${{ steps.state.outputs.state }}
+          accounts_ids: '{"staging": 963448533985,"develop": 968295074588,"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
+        run: |
+          # Promote to the next environment
+          tag = $(echo $STATE | jq '.Item.tag.S')
+          staging = $(echo $STATE | jq '.Item.staging.BOOL')
+          demo = $(echo $STATE | jq '.Item.demo.BOOL')
+          sandbox = $(echo $STATE | jq '.Item.sandbox.BOOL')
+          production = $(echo $STATE | jq '.Item.production.BOOL')
+          environment=""
+          account=""
+          if [[ "$staging" == "true "]];
+          then
+            echo "Staging deployed, checking next environment"
+            if [[ "$demo" == "true" ]];
+            then
+              echo "Demo deployed, checking next environment"
+              if [[ "$sandbox" == "true" ]];
+              then
+                echo "Sandbox deployed, checking next environment"
+                if [[ "$production" == "true" ]];
+                then
+                  echo "Production deployed, finish pipeline"
+                  exit 0;
+                else
+                  environment="production"
+                  account=$(echo $accounts_ids | jq '.production')
+                fi
+              else
+                environment="sandbox"
+                account=$(echo $accounts_ids | jq '.sandbox')
+              fi
+            else
+              environment="demo"
+              account=$(echo $accounts_ids | jq '.demo')
+            fi
+          else
+            environment="staging"
+            account=$(echo $accounts_ids | jq '.staging')
+          fi
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "account=$account" >> $GITHUB_OUTPUT
+          echo "environment=$environment" >> $GITHUB_OUTPUT
+
+  deploy_release:
+    runs-on: ubuntu-latest
+    needs: [promote_pipeline]
+    steps:
+      - name: Checkout helm repository
+        uses: actions/checkout@v2
+        with:
+          repository: Tesorio/helm
+          token: ${{ secrets.PAT_GITHUB }}
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v1.23.5
+      - name: Install helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.8.2
+      - name: Configure AWS Credentials
+        env:
+          account: ${{ needs.promote_pipeline.outputs.account }}
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${account}:role/gh-deployment-role
+          aws-region: us-east-1
+      - name: Run migrations
+        env:
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+        run: |
+          # Access to the EKS cluster
+          aws eks update-kubeconfig --name $environment-eks-cluster
+          # Remove migration job
+          cd migration-job
+          helm uninstall migration-job -n $environment || true
+          # Run release phase
+          helm install migration-job . -n $environment --set=environment=$environment --set=image.tag=$tag
+          # Wait for job to finish
+          TIMEOUT=0 # 5 MIN
+          lastStatus=""
+          until [ $TIMEOUT -eq 300 ] || [[ $lastStatus == "finished" ]];
+          do
+            sleep 1s
+            TIMEOUT=$((TIMEOUT + 1))
+            failedJob=$(kubectl get jobs migration-job -n dashboard -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
+            completedJob=$(kubectl get jobs migration-job -n dashboard -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+            if [[ $failedJob == "True" ]] || [[ $completedJob == "True" ]];
+            then
+              lastStatus="finished"
+            else
+              echo "`date` - waiting migration status..."
+            fi
+          done
+          # Show output
+          echo -e "\n********** migration-job logs ********** \n"
+          kubectl logs -ljob-name=migration-job -n dashboard --tail 2000
+          echo -e "\n**********        End logs        ********** \n"
+          if [[ $lastStatus == "finished" ]];
+          then
+            if [[ $failedJob == "True" ]];
+            then
+              echo "Migration job failed";
+              exit 1
+            fi
+          else
+            echo -e "\e[93mTime out $timeout_sec sec...\e[0m\n";
+            exit 1
+          fi
+  
+  deploy_dashboard:
+    needs: [promote_pipeline, deploy_release]
+    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
+    with:
+      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
+      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
+      EKS_HELM_CHART: dashboard
+      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
+    secrets:
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
+
+  deploy_pay:
+    needs: [promote_pipeline, deploy_release]
+    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
+    with:
+      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
+      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
+      EKS_HELM_CHART: pay
+      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
+    secrets:
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
+
+  deploy_workers:
+    needs: [promote_pipeline, deploy_release]
+    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
+    with:
+      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
+      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
+      EKS_HELM_CHART: workers
+      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
+    secrets:
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
+
+  deploy_schedule:
+    needs: [promote_pipeline, deploy_release]
+    uses: Tesorio/github-actions/.github/workflows/eks-deploy.yml@main
+    with:
+      AWS_ROLE: arn:aws:iam::#####account_id#####:role/gh-deployment-role
+      EKS_HELM_ENVIRONMENT: ${{ needs.promote_pipeline.outputs.environment }}
+      EKS_HELM_CHART: schedule-job
+      EKS_HELM_TAG: ${{ needs.promote_pipeline.outputs.tag }}
+    secrets:
+      PAT_GITHUB: ${{ secrets.PAT_GITHUB}}
+  
+  update_pipeline:
+    needs: [promote_pipeline, deploy_dashboard, deploy_Pay, deploy_workers, deploy_schedule]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::602655069356:role/gh-deployment-role
+          aws-region: us-east-1
+      - name: Update pipeline state
+        id: state
+        env:
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+        run: |
+          aws dynamodb update-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' --attribute-updates '{"$environment": {"Value":{"BOOL":"true"}}}'
+      - name: Update issue comment
+        env:
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+        run: |
+          # Generate message
+          msg = "$environment was successfully promoted using the tag: $tag"
+          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}')
+      - name: Update issue table
+        env:
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+        run: |
+          # Update issue table to show the pipeline state
+          msg = "$environment was successfully promoted using the tag: $tag"
+          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}')
+      - name: Update issue state
+        env:
+          environment: ${{ needs.promote_pipeline.outputs.environment }}
+          tag: ${{ needs.promote_pipeline.outputs.tag }}
+        run: |
+          # Update the issue state to close if production was deployed
+          msg = "$environment was successfully promoted using the tag: $tag"
+          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}')
