@@ -60,7 +60,7 @@ jobs:
         run: |
           # Promote to the next environment
           echo $STATE
-          tag = $(echo $STATE | jq '.Item.tag.S')
+          tag = $(echo '${STATE}' | jq '.Item.tag.S')
           staging = $(echo $STATE | jq '.Item.staging.BOOL')
           demo = $(echo $STATE | jq '.Item.demo.BOOL')
           sandbox = $(echo $STATE | jq '.Item.sandbox.BOOL')
