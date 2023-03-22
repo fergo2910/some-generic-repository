@@ -28,7 +28,7 @@ jobs:
         id: state
         run: |
           state=$(aws dynamodb get-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}')
-          state=$(echo $state | tr -d '\n' | xargs )
+          state=$(echo $state | tr -d '\n')
           if [[ "$state" == "" ]];
           then
             echo "Promotion Pipeline not found in database"
