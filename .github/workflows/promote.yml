@@ -19,6 +19,24 @@ jobs:
       account: ${{ steps.promote.outputs.account }}
       tag: ${{ steps.promote.outputs.tag }}
     steps:
+      - name: Check comment from assignees
+        id: check
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          approvers: fergo2910,caioariede,JEBoothjr
+        run: |
+          author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
+          comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
+          echo $author
+          if [[ $author == *"$approvers"* ]] && [[ "$comment" == *"promote"* ]];
+          then
+            echo "Pipeline autorized, ready to promote to the next environment"
+            ## Notify to slack
+          else
+            echo "Pipeline comment rejected. Not autorized"
+            ## Notify to slack
+            exit 1;
+          fi
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -34,24 +52,6 @@ jobs:
             exit 1;
           else
             echo "state=${state}" >> $GITHUB_OUTPUT
-          fi
-      - name: Check comment from assignees
-        id: check
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-          approvers: fergo2910,caioariede,JEBoothjr
-        run: |
-          author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
-          comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
-          echo $author
-          if [[ "$author" == *"$approvers"* ]] && [[ "$comment" == *"promote"* ]];
-          then
-            echo "Pipeline autorized, ready to promote to the next environment"
-            ## Notify to slack
-          else
-            echo "Pipeline comment rejected. Not autorized"
-            ## Notify to slack
-            exit 1;
           fi
       - name: Get next environment
         id: promote
