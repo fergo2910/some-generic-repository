@@ -61,10 +61,15 @@ jobs:
         run: |
           # Promote to the next environment
           tag=$(echo ${{steps.state.output.state}} | jq '.tag.S')
+          echo $tag
           staging=$(echo ${{steps.state.output.state}} | jq '.staging.BOOL')
+          echo $staging
           demo=$(echo ${{steps.state.output.state}} | jq '.demo.BOOL')
+          echo $demo
           sandbox=$(echo ${{steps.state.output.state}} | jq '.sandbox.BOOL')
+          echo $sandbox
           production=$(echo ${{steps.state.output.state}} | jq '.production.BOOL')
+          echo $production
           environment=""
           account=""
           if [[ "$staging" == "true "]];
