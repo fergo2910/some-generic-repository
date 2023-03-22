@@ -27,10 +27,7 @@ jobs:
       - name: Get promotion pipeline state
         id: state
         run: |
-          state=$(aws dynamodb get-item --output json --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' | jq '.Item')
-          state=$(echo $state | tr -d '\n')
-          state_json=$(echo $state | jq)
-          echo $state_json
+          state=$(aws dynamodb get-item --output json --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' | jq '.Item' | tr -d '\n')
           if [[ "$state" == "" ]];
           then
             echo "Promotion Pipeline not found in database"
@@ -42,16 +39,18 @@ jobs:
         id: check
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
+          approvers: fergo2910,caioariede,JEBoothjr
         run: |
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
-          assignees=$(echo "$GITHUB_CONTEXT" | jq '.event.issue.assignees[].login')
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
           # If comment has promote and comes from any of the assignees 
-          if [[ "$assignees" == *"$author"* ]] && [[ "$comment" == *"promote"* ]];
+          if [[ "$approvers" == *"$author"* ]] && [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
+            ## Notify to slack
           else
             echo "Pipeline comment rejected. Not autorized"
+            ## Notify to slack
             exit 1;
           fi
       - name: Get next environment
@@ -99,6 +98,9 @@ jobs:
           echo "tag=$tag" >> $GITHUB_OUTPUT
           echo "account=$account" >> $GITHUB_OUTPUT
           echo "environment=$environment" >> $GITHUB_OUTPUT
+      - name: Notify next environment to deploy
+        run: |
+          echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
 
   deploy_release:
     runs-on: ubuntu-latest
@@ -125,7 +127,7 @@ jobs:
           environment: ${{ needs.promote_pipeline.outputs.environment }}
           tag: ${{ needs.promote_pipeline.outputs.tag }}
         run: |
-          aws dynamodb update-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' --attribute-updates '{"$environment": {"Value":{"BOOL":"true"}}}'
+          aws dynamodb update-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' --attribute-updates '{"$environment": {"Value":{"BOOL":true}}}'
       - name: Update issue comment
         env:
           environment: ${{ needs.promote_pipeline.outputs.environment }}
