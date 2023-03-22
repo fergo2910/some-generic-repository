@@ -17,14 +17,6 @@ permissions:
   issues: write
 
 jobs:
-  notify_staging_deployment_started:
-    name: Notify Staging Deployment Started
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Staging Deployment Started
-        run: |
-          echo "new pipeline started"
-
   tags:
     runs-on: ubuntu-latest
     outputs:
@@ -34,37 +26,19 @@ jobs:
         id: sha7
         run: echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
 
-  build:
+  build_release_deploy_notify:
     runs-on: ubuntu-latest
     steps:
       - name: Extract SHA with 7 characters
-        run: echo "build all apps"
-      
-  release:
-    runs-on: ubuntu-latest
-    needs: [tags, build]
-    steps:
-      - name: Checkout helm repository
-        run: echo "release"
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [tags, release]
-    steps:
-      - name: Checkout helm repository
-        run: echo "release"
-      
-  notify_staging_deployment_finished:
-    needs: [tags, deploy]
-    name: Notify Staging Deployment finished
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Staging Deployment finished
         run: |
+          echo "new pipeline started"
+          echo "build all apps"
+          echo "release"
+          echo "deploy"
           echo "deployment to staging finish"
 
   start_promotion_pipeline:
-    needs: [tags, notify_staging_deployment_finished]
+    needs: [tags, build_release_deploy_notify]
     runs-on: ubuntu-latest
     steps:
       - name: Check if a new promotion pipeline already exists
