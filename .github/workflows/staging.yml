@@ -40,6 +40,7 @@ jobs:
           echo "release_type=${release_type}" >> $GITHUB_OUTPUT
 
   build_release_deploy_notify:
+    needs: [tags]
     runs-on: ubuntu-latest
     steps:
       - name: Extract SHA with 7 characters
