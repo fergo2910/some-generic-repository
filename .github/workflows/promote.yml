@@ -18,6 +18,9 @@ jobs:
       environment: ${{ steps.promote.outputs.environment }}
       account: ${{ steps.promote.outputs.account }}
       tag: ${{ steps.promote.outputs.tag }}
+      demo: ${{ steps.promote.outpus.demo }}
+      sandbox: ${{ steps.promote.outpus.sandbox }}
+      production: ${{ steps.promote.outpus.production }}
     steps:
       - name: Check comment from assignees
         id: check
@@ -54,48 +57,38 @@ jobs:
       - name: Get next environment
         id: promote
         env:
-          accounts_ids: '{"staging": 963448533985,"develop": 968295074588,"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
+          accounts_ids: '{"demo":362913166060,"sandbox":474670672067,"production":847541778993}'
         run: |
           # Promote to the next environment
           tag=$(echo '${{steps.state.outputs.state}}' | jq '.tag.S')
-          staging=$(echo '${{steps.state.outputs.state}}' | jq '.staging.BOOL')
           demo=$(echo '${{steps.state.outputs.state}}' | jq '.demo.BOOL')
           sandbox=$(echo '${{steps.state.outputs.state}}' | jq '.sandbox.BOOL')
           production=$(echo '${{steps.state.outputs.state}}' | jq '.production.BOOL')
           environment=""
           account=""
-          if [[ "$staging" == "true" ]];
+          if [[ $demo ]];
           then
-            echo "Staging deployed, checking next environment"
-            if [[ "$demo" == "true" ]];
+            if [[ $sandbox ]];
             then
-              echo "Demo deployed, checking next environment"
-              if [[ "$sandbox" == "true" ]];
-              then
-                echo "Sandbox deployed, checking next environment"
-                if [[ "$production" == "true" ]];
-                then
-                  echo "Production deployed, finish pipeline"
-                  exit 0;
-                else
-                  environment="production"
-                  account=$(echo $accounts_ids | jq '.production')
-                fi
-              else
-                environment="sandbox"
-                account=$(echo $accounts_ids | jq '.sandbox')
-              fi
+              environment="production"
+              production=true
+              account=$(echo $accounts_ids | jq '.production')
             else
-              environment="demo"
-              account=$(echo $accounts_ids | jq '.demo')
+              environment="sandbox"
+              sandbox=true
+              account=$(echo $accounts_ids | jq '.sandbox')
             fi
           else
-            environment="staging"
-            account=$(echo $accounts_ids | jq '.staging')
+            environment="demo"
+            demo=true
+            account=$(echo $accounts_ids | jq '.demo')
           fi
           echo "tag=$tag" >> $GITHUB_OUTPUT
           echo "account=$account" >> $GITHUB_OUTPUT
           echo "environment=$environment" >> $GITHUB_OUTPUT
+          echo "demo=$demo" >> $GITHUB_OUTPUT
+          echo "sandbox=$sandbox" >> $GITHUB_OUTPUT
+          echo "production=$production" >> $GITHUB_OUTPUT
       - name: Notify next environment to deploy
         run: |
           echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
@@ -132,10 +125,17 @@ jobs:
           -d "{\"body\":\"${{ needs.promote_pipeline.outputs.environment }} was successfully promoted. Tag: ${{ needs.promote_pipeline.outputs.tag }}\"}"
       - name: Update issue table
         run: |
-          # Update issue table to show the pipeline state
-          msg="${{ needs.promote_pipeline.outputs.environment }} was successfully promoted using the tag: ${{ needs.promote_pipeline.outputs.tag }}"
-          echo ${msg}
-          # curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}'
+          demoStatus="Pending"
+          sandboxStatus="Pending"
+          productionStatus="Pending"
+          if [ ${{ needs.promote_pipeline.outputs.demo }} ]; then demoStatus="Deployed"; fi
+          if [ ${{ needs.promote_pipeline.outputs.sandbox }} ]; then sandboxStatus="Deployed"; fi
+          if [ ${{ needs.promote_pipeline.outputs.production }} ]; then productionStatus="Deployed"; fi
+          curl -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }} \
+          -d "{\"body\":\"# New promotion pipeline created for tag ${{ needs.promote_pipeline.outputs.tag }} \n | Environment | Status | \n |---|---| \n | Staging | Deployed | \n | Demo  | ${demoStatus} | \n | Sandbox  | ${sandboxStatus} | \n | Production  | ${productionStatus} |\"}"
       - name: Update issue state
         run: |
           if [[ "${{ needs.promote_pipeline.outputs.environment }}" == "production" ]];
