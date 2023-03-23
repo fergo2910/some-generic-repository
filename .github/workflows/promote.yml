@@ -125,8 +125,11 @@ jobs:
           aws dynamodb update-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' --attribute-updates '{"${{ needs.promote_pipeline.outputs.environment }}": {"Value":{"BOOL":true}}}'
       - name: Update issue comment
         run: |
-          json_msg="{\"body\":\"${{ needs.promote_pipeline.outputs.environment }} was successfully promoted. Tag: ${{ needs.promote_pipeline.outputs.tag }}\"}"
-          curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d ${json_msg}
+          curl -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments \
+          -d "{\"body\":\"${{ needs.promote_pipeline.outputs.environment }} was successfully promoted. Tag: ${{ needs.promote_pipeline.outputs.tag }}\"}"
       - name: Update issue table
         run: |
           # Update issue table to show the pipeline state
