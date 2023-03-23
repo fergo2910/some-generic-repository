@@ -5,6 +5,12 @@ on:
     tags:
       - hotfix-*
       - release/*
+  workflow_call:
+    inputs:
+      checkoutBranch:
+        description: "Which branch are we deploying from"
+        required: true
+        type: string
 
 # Cancel in progress builds
 concurrency:
