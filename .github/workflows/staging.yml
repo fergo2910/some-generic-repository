@@ -35,11 +35,9 @@ jobs:
         run: |
           echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
           BRANCH=$(echo ${GITHUB_REF#refs/})
-          BRANCH=$(echo ${BRANCH#heads/})
-          BRANCH=$(echo ${BRANCH#tags/})
-          BRANCH=$(echo ${BRANCH} | tr '/' '-')
-          echo ${BRANCH}
-          echo "release_type=${BRANCH}" >> $GITHUB_OUTPUT
+          release_type=""
+          if [[ "${BRANCH}" == *"release"* ]]; then release_type="release"; else release_type="hotfix"; fi
+          echo "release_type=${release_type}" >> $GITHUB_OUTPUT
 
   build_release_deploy_notify:
     runs-on: ubuntu-latest
