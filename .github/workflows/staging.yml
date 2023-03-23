@@ -3,8 +3,9 @@ name: EKS Staging build and deploy pipeline
 on:
   push:
     tags:
-      - hotfix-*
-      - release/*
+      - hotfix-20**
+    branches:
+      - 'release/20**'
   workflow_call:
     inputs:
       checkoutBranch:
@@ -27,17 +28,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sha7: ${{ steps.sha7.outputs.sha7 }}
+      release_type: ${{ steps.sha7.outputs.release_type }}
     steps:
       - name: Extract SHA with 7 characters
         id: sha7
-        run: echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+        run: |
+          echo "sha7=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+          BRANCH=$(echo ${GITHUB_REF#refs/})
+          BRANCH=$(echo ${BRANCH#heads/})
+          BRANCH=$(echo ${BRANCH#tags/})
+          BRANCH=$(echo ${BRANCH} | tr '/' '-')
+          echo ${BRANCH}
+          echo "release_type=${BRANCH}" >> $GITHUB_OUTPUT
 
   build_release_deploy_notify:
     runs-on: ubuntu-latest
     steps:
       - name: Extract SHA with 7 characters
         run: |
-          echo "new pipeline started"
+          echo "new pipeline started: type: ${{ needs.tags.outputs.release_type}}"
           echo "build all apps"
           echo "release"
           echo "deploy"
