@@ -141,6 +141,9 @@ jobs:
           if [[ "${{ needs.promote_pipeline.outputs.environment }}" == "production" ]];
           then
             echo "pipeline finished";
-          else
-            echo "nothing"
+            curl -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }} \
+          -d "{\"state\":\"closed\"}"
           fi
