@@ -92,6 +92,13 @@ jobs:
       - name: Notify next environment to deploy
         run: |
           echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
+      - name: Notify as an issue comment
+        run: |
+          curl -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{github.token}}" \
+          https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments \
+          -d "{\"body\":\"${{steps.promote.outputs.environment}} promotion has iniciated. Tag: ${{steps.promote.outputs.tag}}. Follow this link to check the progress: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
 
   deploy_release:
     runs-on: ubuntu-latest
