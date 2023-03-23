@@ -66,9 +66,9 @@ jobs:
           production=$(echo '${{steps.state.outputs.state}}' | jq '.production.BOOL')
           environment=""
           account=""
-          if [[ $demo ]];
+          if [[ "$demo" == "true" ]];
           then
-            if [[ $sandbox ]];
+            if [[ "$sandbox" == "true" ]];
             then
               environment="production"
               production=true
@@ -89,12 +89,6 @@ jobs:
           echo "demo=$demo" >> $GITHUB_OUTPUT
           echo "sandbox=$sandbox" >> $GITHUB_OUTPUT
           echo "production=$production" >> $GITHUB_OUTPUT
-          echo demo: $demo
-          echo sandbox: $sandbox
-          echo production: $production
-          echo environment: $environment
-          echo account: $account
-          cat $GITHUB_OUTPUT
       - name: Notify next environment to deploy
         run: |
           echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
@@ -134,9 +128,9 @@ jobs:
           demoStatus="Pending"
           sandboxStatus="Pending"
           productionStatus="Pending"
-          if [[ ${{ needs.promote_pipeline.outputs.demo }} ]]; then demoStatus="Deployed"; fi
-          if [[ ${{ needs.promote_pipeline.outputs.sandbox }} ]]; then sandboxStatus="Deployed"; fi
-          if [[ ${{ needs.promote_pipeline.outputs.production }} ]]; then productionStatus="Deployed"; fi
+          if [[ "${{ needs.promote_pipeline.outputs.demo }}" == "true" ]]; then demoStatus="Deployed"; fi
+          if [[ "${{ needs.promote_pipeline.outputs.sandbox }}" == "true" ]]; then sandboxStatus="Deployed"; fi
+          if [[ "${{ needs.promote_pipeline.outputs.production }}" == "true" ]]; then productionStatus="Deployed"; fi
           curl -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{github.token}}" \
