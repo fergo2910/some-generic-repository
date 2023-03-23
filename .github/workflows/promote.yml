@@ -66,9 +66,9 @@ jobs:
           production=$(echo '${{steps.state.outputs.state}}' | jq '.production.BOOL')
           environment=""
           account=""
-          if [[ $demo ]];
+          if [[ "$demo" == "true" ]];
           then
-            if [[ $sandbox ]];
+            if [[ "$sandbox" == "true" ]];
             then
               environment="production"
               production=true
@@ -90,7 +90,8 @@ jobs:
           echo "sandbox=$sandbox" >> $GITHUB_OUTPUT
           echo "production=$production" >> $GITHUB_OUTPUT
           echo $demo $sandbox $production
-          echo $GITHUB_OUTPUT
+          echo $environment $account
+          cat $GITHUB_OUTPUT
       - name: Notify next environment to deploy
         run: |
           echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
