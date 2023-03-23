@@ -128,9 +128,9 @@ jobs:
           demoStatus="Pending"
           sandboxStatus="Pending"
           productionStatus="Pending"
-          if [ ${{ needs.promote_pipeline.outputs.demo }} ]; then demoStatus="Deployed"; fi
-          if [ ${{ needs.promote_pipeline.outputs.sandbox }} ]; then sandboxStatus="Deployed"; fi
-          if [ ${{ needs.promote_pipeline.outputs.production }} ]; then productionStatus="Deployed"; fi
+          if [[ ${{ needs.promote_pipeline.outputs.demo }} ]]; then demoStatus="Deployed"; fi
+          if [[ ${{ needs.promote_pipeline.outputs.sandbox }} ]]; then sandboxStatus="Deployed"; fi
+          if [[ ${{ needs.promote_pipeline.outputs.production }} ]]; then productionStatus="Deployed"; fi
           curl -X PATCH \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{github.token}}" \
