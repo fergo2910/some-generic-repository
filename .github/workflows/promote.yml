@@ -89,6 +89,8 @@ jobs:
           echo "demo=$demo" >> $GITHUB_OUTPUT
           echo "sandbox=$sandbox" >> $GITHUB_OUTPUT
           echo "production=$production" >> $GITHUB_OUTPUT
+          echo $demo $sandbox $production
+          echo $GITHUB_OUTPUT
       - name: Notify next environment to deploy
         run: |
           echo "Environemnt: ${{steps.promote.outputs.environment}}. Account: ${{steps.promote.outputs.account}}. Tag: ${{steps.promote.outputs.tag}}."
