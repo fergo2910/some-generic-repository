@@ -124,26 +124,22 @@ jobs:
         run: |
           aws dynamodb update-item --table-name dashboard-promotion-pipeline --key '{"issue":{"N":"${{ github.event.issue.number }}"}}' --attribute-updates '{"${{ needs.promote_pipeline.outputs.environment }}": {"Value":{"BOOL":true}}}'
       - name: Update issue comment
-        env:
-          environment: ${{ needs.promote_pipeline.outputs.environment }}
-          tag: ${{ needs.promote_pipeline.outputs.tag }}
         run: |
           # Generate message
-          msg="$environment was successfully promoted using the tag: $tag"
-          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":$msg}')
+          msg="${{ needs.promote_pipeline.outputs.environment }} was successfully promoted using the tag: ${{ needs.promote_pipeline.outputs.tag }}"
+          echo ${msg}
+          curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d "{\"body\":${msg}}"
       - name: Update issue table
-        env:
-          environment: ${{ needs.promote_pipeline.outputs.environment }}
-          tag: ${{ needs.promote_pipeline.outputs.tag }}
         run: |
           # Update issue table to show the pipeline state
-          msg="$environment was successfully promoted using the tag: $tag"
-          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}')
+          msg="${{ needs.promote_pipeline.outputs.environment }} was successfully promoted using the tag: ${{ needs.promote_pipeline.outputs.tag }}"
+          echo ${msg}
+          # curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}'
       - name: Update issue state
-        env:
-          environment: ${{ needs.promote_pipeline.outputs.environment }}
-          tag: ${{ needs.promote_pipeline.outputs.tag }}
         run: |
-          # Update the issue state to close if production was deployed
-          msg="$environment was successfully promoted using the tag: $tag"
-          issue=$(curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{github.token}}" https://api.github.com/repos/${{github.repository}}/issues/${{ github.event.issue.number }}/comments -d '{"body":"$msg"}')
+          if [[ "${{ needs.promote_pipeline.outputs.environment }}" == "production" ]];
+          then
+            echo "pipeline finished";
+          else
+            echo "nothing"
+          fi
