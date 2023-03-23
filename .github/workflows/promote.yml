@@ -18,9 +18,9 @@ jobs:
       environment: ${{ steps.promote.outputs.environment }}
       account: ${{ steps.promote.outputs.account }}
       tag: ${{ steps.promote.outputs.tag }}
-      demo: ${{ steps.promote.outpus.demo }}
-      sandbox: ${{ steps.promote.outpus.sandbox }}
-      production: ${{ steps.promote.outpus.production }}
+      demo: ${{ steps.promote.outputs.demo }}
+      sandbox: ${{ steps.promote.outputs.sandbox }}
+      production: ${{ steps.promote.outputs.production }}
     steps:
       - name: Check comment from assignees
         id: check
@@ -66,9 +66,9 @@ jobs:
           production=$(echo '${{steps.state.outputs.state}}' | jq '.production.BOOL')
           environment=""
           account=""
-          if [[ "$demo" == "true" ]];
+          if [[ $demo ]];
           then
-            if [[ "$sandbox" == "true" ]];
+            if [[ $sandbox ]];
             then
               environment="production"
               production=true
@@ -89,8 +89,11 @@ jobs:
           echo "demo=$demo" >> $GITHUB_OUTPUT
           echo "sandbox=$sandbox" >> $GITHUB_OUTPUT
           echo "production=$production" >> $GITHUB_OUTPUT
-          echo $demo $sandbox $production
-          echo $environment $account
+          echo demo: $demo
+          echo sandbox: $sandbox
+          echo production: $production
+          echo environment: $environment
+          echo account: $account
           cat $GITHUB_OUTPUT
       - name: Notify next environment to deploy
         run: |
