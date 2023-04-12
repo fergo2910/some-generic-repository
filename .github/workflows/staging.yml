@@ -1,11 +1,11 @@
 name: EKS Staging build and deploy pipeline
 
 on:
-  push:
-    tags:
-      - hotfix-20**
-    branches:
-      - 'release/20**'
+  # push:
+  #   tags:
+  #     - hotfix-20**
+  #   branches:
+  #     - 'release/20**'
   workflow_call:
     inputs:
       checkoutBranch:
