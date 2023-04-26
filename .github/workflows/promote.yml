@@ -28,11 +28,13 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
+          author="${author//\"/}"
           echo ${author}
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
+          comment="${comment//\"/}"
           echo ${comment}
           authUsers=("fergo2910" "caioariede" "JEBoothjr")
-          echo ${authUsers}
+          echo ${authorizers[@]}
           if [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
