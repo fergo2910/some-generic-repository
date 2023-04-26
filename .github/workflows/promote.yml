@@ -36,7 +36,7 @@ jobs:
           if [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
-            if [[ ${author} =~ ${authUsers} ]];
+            if [[ ${authUsers} == *${author}* ]];
             then
               echo "promoted auth"
             else
