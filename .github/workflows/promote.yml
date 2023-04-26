@@ -31,16 +31,16 @@ jobs:
           echo ${author}
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
           echo ${comment}
-          authUsers="fergo2910,caioariede,JEBoothjr"
+          authUsers=("fergo2910" "caioariede" "JEBoothjr")
           echo ${authUsers}
           if [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
-            if echo ${authUsers} | grep -q ${author} && echo "true"
-            then
-              echo "promoted auth"
+            if [[ " ${authorizers[@]} " =~ " ${author} " ]]; then
+              echo "Input is an authorizer"
             else
-              exit 1;
+              echo "Input is not an authorizer"
+              exit 1
             fi
           else
             echo "Pipeline comment rejected. Not autorized"
