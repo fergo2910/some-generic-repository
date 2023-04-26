@@ -33,7 +33,7 @@ jobs:
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
           comment="${comment//\"/}"
           echo ${comment}
-          authUsers=("fergo2910" "caioariede" "JEBoothjr")
+          authorizers=("fergo2910" "caioariede" "JEBoothjr")
           echo ${authorizers[@]}
           if [[ "$comment" == *"promote"* ]];
           then
