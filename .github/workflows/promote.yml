@@ -31,7 +31,7 @@ jobs:
           echo ${author}
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
           echo ${comment}
-          authUsers=("fergo2910 caioariede JEBoothjr")
+          authUsers=("fergo2910", "caioariede", "JEBoothjr")
           echo ${authUsers}
           if [[ "$comment" == *"promote"* ]] && [[ " ${authUsers[*]} " =~ " ${author} " ]];
           then
