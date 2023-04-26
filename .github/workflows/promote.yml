@@ -33,9 +33,14 @@ jobs:
           echo ${comment}
           authUsers=("fergo2910 caioariede JEBoothjr")
           echo ${authUsers}
-          if [[ "$comment" == *"promote"* ]] && [[ "\"${authUsers[*]}\"" =~ "${author}" ]];
+          if [[ "$comment" == *"promote"* ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
+            echo ${authUsers[*]}
+            if [[ "\"${authUsers[*]}\"" =~ "${author}" ]];
+            then
+              echo "promoted auth"
+            fi
           else
             echo "Pipeline comment rejected. Not autorized"
             exit 1;
