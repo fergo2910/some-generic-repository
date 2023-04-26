@@ -28,14 +28,16 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: |
           author=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.user.login')
+          echo ${author}
           comment=$(echo "$GITHUB_CONTEXT" | jq '.event.comment.body')
-          if [[ "$comment" == *"promote"* ]];
+          echo ${comment}
+          authUsers=("fergo2910 caioariede JEBoothjr")
+          echo ${authUsers}
+          if [[ "$comment" == *"promote"* ]] && [[ " ${authUsers[*]} " =~ " ${author} " ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
-            ## Notify to slack
           else
             echo "Pipeline comment rejected. Not autorized"
-            ## Notify to slack
             exit 1;
           fi
       - name: Configure AWS Credentials
