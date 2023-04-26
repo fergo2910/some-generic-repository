@@ -35,15 +35,9 @@ jobs:
           echo ${comment}
           authorizers=("fergo2910" "caioariede" "JEBoothjr")
           echo ${authorizers[@]}
-          if [[ "$comment" == *"promote"* ]];
+          if [[ "$comment" == *"promote"* ]] && [[ " ${authorizers[@]} " =~ " ${author} " ]];
           then
             echo "Pipeline autorized, ready to promote to the next environment"
-            if [[ " ${authorizers[@]} " =~ " ${author} " ]]; then
-              echo "Input is an authorizer"
-            else
-              echo "Input is not an authorizer"
-              exit 1
-            fi
           else
             echo "Pipeline comment rejected. Not autorized"
             exit 1;
