@@ -7,13 +7,15 @@ on:
         required: false
         type: string
         default: main
-    secrets:
       SENTRY_TOKEN:
         required: false
+        type: string
       DASHBOARD_SENTRY_DSN:
         required: false
+        type: string
       PAY_SENTRY_DSN:
         required: false
+        type: string
 
 concurrency:
   group: dashboard-pipelines-deploy-develop
@@ -26,7 +28,7 @@ jobs:
     with:
       pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
       SENTRY_ENVIRONMENT: DEVELOP
-      SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
-      DASHBOARD_SENTRY_DSN: ${{ secrets.DASHBOARD_SENTRY_DSN }}
-      PAY_SENTRY_DSN: ${{ secrets.PAY_SENTRY_DSN }}
+      SENTRY_TOKEN: ${{ inputs.SENTRY_TOKEN }}
+      DASHBOARD_SENTRY_DSN: ${{ inputs.DASHBOARD_SENTRY_DSN }}
+      PAY_SENTRY_DSN: ${{ inputs.PAY_SENTRY_DSN }}
     secrets: inherit
