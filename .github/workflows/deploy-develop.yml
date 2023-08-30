@@ -7,6 +7,15 @@ on:
         required: false
         type: string
         default: main
+    secrets:
+      SENTRY_TOKEN:
+        required: false
+      DASHBOARD_SENTRY_DSN:
+        required: false
+      PAY_SENTRY_DSN:
+        required: false
+      SENTRY_ENVIRONMENT:
+        required: false
 
 concurrency:
   group: dashboard-pipelines-deploy-develop
