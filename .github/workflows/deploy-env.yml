@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   build_dashboard:
-    uses: ./.github/workflows/build-push-app-image.yml
+    uses: ./.github/actions/docker/build-push
     with:
       pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
       app_docker_secrets: |
@@ -39,7 +39,7 @@ jobs:
     secrets: inherit
 
   build_pay:
-    uses: ./.github/workflows/build-push-app-image.yml
+    uses: ./.github/actions/docker/build-push
     with:
       pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
       app_docker_secrets: |
