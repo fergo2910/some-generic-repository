@@ -1,0 +1,20 @@
+name: Build push
+
+on:
+  workflow_call:
+    inputs:
+      pipeline_workflow_ref:
+        description: Whether or not to deploy Payment Portal for this environment
+        type: string
+        required: true
+      app_docker_secrets:
+        type: string
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: |
+          echo ${{ inputs.app_docker_secrets }}
