@@ -1,19 +1,20 @@
-name: Build and Push Image to GitHub Packages
-description: Builds and pushes built images to GitHub Packages Registry
+name: Build push
 
-inputs:
-  pipeline_workflow_ref:
-    description: Docker secrets as environment variables
-    required: false
-    type: string
-  app_docker_secrets:
-    description: Docker secrets as environment variables
-    required: false
-    type: string
+on:
+  workflow_call:
+    inputs:
+      pipeline_workflow_ref:
+        description: Whether or not to deploy Payment Portal for this environment
+        type: string
+        required: true
+      app_docker_secrets:
+        type: string
 
-runs:
-  using: composite
-  steps:
-    - name: Test
-      run: |
-        echo ${{ inputs.app_docker_secrets }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: |
+          echo ${{ inputs.app_docker_secrets }}
