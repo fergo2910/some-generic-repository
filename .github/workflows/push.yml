@@ -15,4 +15,7 @@ jobs:
     uses: ./.github/workflows/deploy-develop.yml
     with:
       pipeline_workflow_ref: v1.0.3
+      SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
+      DASHBOARD_SENTRY_DSN: ${{ secrets.DASHBOARD_SENTRY_DSN }}
+      PAY_SENTRY_DSN: ${{ secrets.PAY_SENTRY_DSN }}
     secrets: inherit

@@ -8,13 +8,13 @@ on:
         type: string
         default: main
       SENTRY_TOKEN:
-        required: false
+        required: true
         type: string
       DASHBOARD_SENTRY_DSN:
-        required: false
+        required: true
         type: string
       PAY_SENTRY_DSN:
-        required: false
+        required: true
         type: string
 
 concurrency:
