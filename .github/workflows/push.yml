@@ -12,7 +12,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy Develop
-    uses: .github/workflows/deploy-develop.yml
+    uses: ./.github/workflows/deploy-develop.yml
     with:
       pipeline_workflow_ref: v1.0.3
     secrets: inherit
