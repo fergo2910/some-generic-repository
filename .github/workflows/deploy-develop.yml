@@ -20,7 +20,7 @@ permissions:
 jobs:
   deploy-develop:
     name: Deploy Develop
-    uses: .github/workflows/deploy-env.yml@master
+    uses: ./.github/workflows/deploy-env.yml@master
     with:
       pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
       SENTRY_ENVIRONMENT: DEVELOP
