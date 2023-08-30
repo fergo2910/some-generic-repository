@@ -1,0 +1,19 @@
+name: Build and Push Image to GitHub Packages
+description: Builds and pushes built images to GitHub Packages Registry
+
+inputs:
+  pipeline_workflow_ref:
+    description: Docker secrets as environment variables
+    required: false
+    type: string
+  app_docker_secrets:
+    description: Docker secrets as environment variables
+    required: false
+    type: string
+
+runs:
+  using: composite
+  steps:
+    - name: Test
+      run: |
+        echo ${{ inputs.app_docker_secrets }}

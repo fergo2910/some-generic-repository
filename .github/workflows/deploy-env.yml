@@ -1,0 +1,50 @@
+name: Deploy Environment
+
+on:
+  workflow_call:
+    inputs:
+      pipeline_workflow_ref:
+        description: Whether or not to deploy Payment Portal for this environment
+        type: boolean
+        required: true
+
+      # https://docs.github.com/en/actions/learn-github-actions/contexts#secrets-context
+      SENTRY_TOKEN:
+        required: false
+        type: string
+      DASHBOARD_SENTRY_DSN:
+        required: false
+        type: string
+      PAY_SENTRY_DSN:
+        required: false
+        type: string
+      SENTRY_ENVIRONMENT:
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
+jobs:
+  build_dashboard:
+    uses: ./.github/workflows/build-push-app-image.yml
+    with:
+      pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
+      app_docker_secrets: |
+        "SENTRY_TOKEN=${{ inputs.SENTRY_TOKEN }}"
+        "SENTRY_DSN=${{ inputs.DASHBOARD_SENTRY_DSN }}"
+        "SENTRY_ENVIRONMENT=${{ inputs.SENTRY_ENVIRONMENT }}"
+    secrets: inherit
+
+  build_pay:
+    uses: ./.github/workflows/build-push-app-image.yml
+    with:
+      pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
+      app_docker_secrets: |
+        "SOURCE_VERSION=${{ needs.setup.outputs.image_version }}"
+        "SENTRY_TOKEN=${{ inputs.SENTRY_TOKEN }}"
+        "SENTRY_DSN=${{ inputs.PAY_SENTRY_DSN }}"
+        "SENTRY_ENVIRONMENT=${{ inputs.SENTRY_ENVIRONMENT }}"
+    secrets: inherit

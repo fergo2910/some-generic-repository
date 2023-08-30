@@ -1,0 +1,30 @@
+name: Deploy to Develop
+
+on:
+  workflow_call:
+    inputs:
+      pipeline_workflow_ref:
+        required: false
+        type: string
+        default: main
+
+concurrency:
+  group: dashboard-pipelines-deploy-develop
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+  packages: write
+
+jobs:
+  deploy-develop:
+    name: Deploy Develop
+    uses: .github/workflows/deploy-env.yml
+    with:
+      pipeline_workflow_ref: ${{ inputs.pipeline_workflow_ref }}
+      SENTRY_ENVIRONMENT: DEVELOP
+      SENTRY_TOKEN: ${{ secrets.DEVELOP_SENTRY_TOKEN }}
+      DASHBOARD_SENTRY_DSN: ${{ secrets.DEVELOP_DASHBOARD_SENTRY_DSN }}
+      PAY_SENTRY_DSN: ${{ secrets.DEVELOP_PAY_SENTRY_DSN }}
+    secrets: inherit
