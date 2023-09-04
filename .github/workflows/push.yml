@@ -10,6 +10,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Test
+        run: |
+          echo "hola"
   deploy:
     name: Deploy Develop
     uses: ./.github/workflows/deploy-develop.yml
