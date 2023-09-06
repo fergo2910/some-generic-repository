@@ -1,0 +1,34 @@
+name: test sequence
+
+on:
+  push:
+    branches:
+      - alv
+
+jobs:
+  first:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Test
+        run: echo "initial"
+      - name: sleep
+        run: sleep 5m
+  second:
+    if: always()
+    needs: [first]
+    runs-on: ubuntu-latest
+    steps:
+      - name: wait for first
+        run: echo "alv"
+      - name: test
+        run: echo "second"
+  third:
+    needs: [second]
+    runs-on: ubuntu-latest
+    steps:
+      - name: test
+        run: echo "third"
+
