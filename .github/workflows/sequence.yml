@@ -7,7 +7,7 @@ on:
 
 jobs:
   first:
-    if: true
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -15,9 +15,9 @@ jobs:
       - name: Test
         run: echo "initial"
       - name: sleep
-        run: sleep 5m
+        run: sleep 1m
   second:
-    if: always()
+    if: !cancelled()
     needs: [first]
     runs-on: ubuntu-latest
     steps:
