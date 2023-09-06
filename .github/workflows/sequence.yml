@@ -17,7 +17,7 @@ jobs:
       - name: sleep
         run: sleep 1m
   second:
-    if: always() && !cancelled() && contains(needs.first.result, 'skipped')
+    if: always() && !cancelled() && !contains(needs.first.result, 'failure')
     needs: [first]
     runs-on: ubuntu-latest
     steps:
