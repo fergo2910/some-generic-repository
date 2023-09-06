@@ -17,7 +17,7 @@ jobs:
       - name: sleep
         run: sleep 1m
   second:
-    if: !cancelled()
+    if: ${{ !cancelled() }}
     needs: [first]
     runs-on: ubuntu-latest
     steps:
